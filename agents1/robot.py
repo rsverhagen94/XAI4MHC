@@ -19,31 +19,32 @@ from matrx.messages.message_manager import MessageManager
 from actions1.custom_actions import Backup, RemoveObjectTogether, CarryObjectTogether, DropObjectTogether, CarryObject, Drop, Injured, AddObject
 
 class Phase(enum.Enum):
-    INTRO=0,
-    LOCATE=1,
-    FIND_NEXT_GOAL=2,
-    PICK_UNSEARCHED_ROOM=3,
-    PLAN_PATH_TO_ROOM=4,
-    FOLLOW_PATH_TO_ROOM=5,
-    REMOVE_OBSTACLE_IF_NEEDED=6,
-    ENTER_ROOM=7,
-    PLAN_ROOM_SEARCH_PATH=8,
-    FOLLOW_ROOM_SEARCH_PATH=9,
-    PLAN_PATH_TO_VICTIM=10,
-    FOLLOW_PATH_TO_VICTIM=11,
-    TAKE_VICTIM=12,
-    PLAN_PATH_TO_DROPPOINT=13,
-    FOLLOW_PATH_TO_DROPPOINT=14,
-    DROP_VICTIM=15,
-    TACTIC=18,
-    PRIORITY=20,
-    RESCUE=21,
-    EXTINGUISH_CHECK=22
+    # define possible phases
+    INTRO = 0,
+    LOCATE = 1,
+    FIND_NEXT_GOAL = 2,
+    PICK_UNSEARCHED_ROOM = 3,
+    PLAN_PATH_TO_ROOM = 4,
+    FOLLOW_PATH_TO_ROOM = 5,
+    REMOVE_OBSTACLE_IF_NEEDED = 6,
+    ENTER_ROOM = 7,
+    PLAN_ROOM_SEARCH_PATH = 8,
+    FOLLOW_ROOM_SEARCH_PATH = 9,
+    PLAN_PATH_TO_VICTIM = 10,
+    FOLLOW_PATH_TO_VICTIM = 11,
+    TAKE_VICTIM = 12,
+    PLAN_PATH_TO_DROPPOINT = 13,
+    FOLLOW_PATH_TO_DROPPOINT = 14,
+    DROP_VICTIM = 15,
+    TACTIC = 16,
+    PRIORITY = 17,
+    RESCUE = 18,
+    EXTINGUISH_CHECK = 19
 
-    
 class robot(custom_agent_brain):
     def __init__(self, name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition):
         super().__init__(name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition)
+        # initialize important variables
         self._phase=Phase.INTRO
         self._name = name
         self._condition = condition
@@ -69,8 +70,10 @@ class robot(custom_agent_brain):
         self._situations = []
         self._plot_times = []
         self._potential_source_offices = []
-        self._situation = None
         self._victim_locations = {}
+        self._office_doors = {(2, 3): '1', (9, 3): '2', (16, 3): '3', (23, 3): '4', (2, 7): '5', (9, 7): '6', (16, 7): '7', 
+                              (2, 17): '8', (9, 17): '9', (16, 17): '10', (2, 21): '11', (9, 21): '12', (16, 21): '13', (23, 21): '14'}
+        self._decided_time = None
         self._current_door = None
         self._current_room = None
         self._goal_victim = None
@@ -79,8 +82,10 @@ class robot(custom_agent_brain):
         self._fire_source_coords = None
         self._deploy_time = None
         self._current_location = None
+        self._situation = None
         self._plot_generated = False
         self._reallocated = False
+        self._decided = False
         self._smoke = '?'
         self._location = '?'
         self._distance = '?'
@@ -91,36 +96,39 @@ class robot(custom_agent_brain):
         self._interventions = 1
 
     def initialize(self):
-        self._state_tracker = StateTracker(agent_id=self.agent_id)
-        self._navigator = Navigator(agent_id=self.agent_id, 
-            action_set=self.action_set, algorithm=Navigator.A_STAR_ALGORITHM)  
+        # initialize state tracker and navigator
+        self._state_tracker = StateTracker(agent_id = self.agent_id)
+        self._navigator = Navigator(agent_id = self.agent_id, action_set = self.action_set, algorithm = Navigator.A_STAR_ALGORITHM)
+        # load all required R libraries that will be launched from within Python
         load_R_to_Py()
 
     def filter_bw4t_observations(self, state):
-        self._office_doors = {(2, 3): '1', (9, 3): '2', (16, 3): '3', (23, 3): '4', (2, 7): '5', (9, 7): '6', (16, 7): '7',
-                              (2, 17): '8', (9, 17): '9', (16, 17): '10', (2, 21): '11', (9, 21): '12', (16, 21): '13', (23, 21): '14'}
+        # calculate the number of seconds passed
         self._second = state['World']['tick_duration'] * state['World']['nr_ticks']
+        # if 6 seconds passed, resistance to collapse and fire duration increase with 1 minute
         if int(self._second) % 6 == 0 and int(self._second) not in self._modulos:
             self._modulos.append(int(self._second))
             self._resistance -= 1
             self._duration += 1
+            # keep track of the duration of deployment tactics
             if self._tactic == 'offensive':
                 self._offensive_deployment_time += 1
             if self._tactic == 'defensive':
                 self._defensive_deployment_time += 1
+        # send hidden messages used for GUI/display with icons
         self._send_message('Time left: ' + str(self._resistance) + '.', self._name)
         self._send_message('Fire duration: ' + str(self._duration) + '.', self._name)
         return state
 
     def decide_on_bw4t_action(self, state:State):
-        #print(self._phase)
+        print(self._phase)
         self._current_location = state[self.agent_id]['location']
 
+        # determine the combination of robot name and allocation threshold depending on counterbalancing condition
         conservative_brutus = ['2', '4', '6', '8', '10', '12', '14', '16']
         radical_brutus = ['1', '3', '5', '7', '9', '11', '13', '15']
         radical_titus = ['2', '4', '6', '8', '10', '12', '14', '16']
         conservative_titus = ['1', '3', '5', '7', '9', '11', '13', '15']
-
         if self._name == 'Brutus' and self._counterbalance_condition in radical_brutus:
             self._threshold = 5.0
         if self._name == 'Brutus' and self._counterbalance_condition in conservative_brutus:
@@ -129,13 +137,14 @@ class robot(custom_agent_brain):
             self._threshold = 5.0
         if self._name == 'Titus' and self._counterbalance_condition in conservative_titus:
             self._threshold = 3.5
-
+        # send hidden message used for logging counterbalance condition, robot name, and allocation threshold
         self._send_message('Counterbalancing condition ' + self._counterbalance_condition + ' name ' + self._name + ' threshold ' + str(self._threshold), self._name)
 
+        # inspect the state and save important information such as location of area tiles, fires, fire source, smoke, and speed of smoke spread
         for info in state.values():
             if 'class_inheritance' in info and 'AreaTile' in info['class_inheritance'] and info['location'] not in self._room_tiles:
                 self._room_tiles.append(info['location'])
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id']:
+            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
                 if not self._fire_source_coords:
                     self._send_message('Found fire source!', self._name)
                     self._fire_source_coords = info['location']
@@ -145,7 +154,7 @@ class robot(custom_agent_brain):
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
                 if info['location'] not in self._fire_locations:
                     self._send_message('Found fire in ' + self._current_room + '.', self._name)
                     self._fire_locations.append(info['location'])
@@ -156,76 +165,79 @@ class robot(custom_agent_brain):
                 if info['location'] in self._office_doors.keys() and info['location'] not in self._potential_source_offices:
                     self._potential_source_offices.append(info['location'])
 
+        # check if fire fighters already found the fire source
         if self.received_messages_content and self.received_messages_content[-1] == 'Fire source located and pinned on the map.':
             self._location = 'found' 
 
+        # save the coordinates of the fire source
         if self._location == 'found':
             for info in state.values():
                 if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire source' in info['name']:
                     self._fire_source_coords = info['location']
-
+        
+        # determine the categorical values for the fire source location
         if self._location == '?':
             self._location_cat = 'unknown'
         if self._location == 'found':
             self._location_cat = 'known'
 
+        # keep track of the times at which visual explanations have been generated
         if self._time_left - self._resistance not in self._plot_times: 
             self._plot_generated = False
 
+        # determine temperature based on the number of fires in the building, fire duration, and number of extinguished fires
         if self._no_fires == 7:
+            # temperature higher if less than 46% extinguished and fire duration more than 44 minutes
             if len(self._extinguished_fire_locations) / self._no_fires <= 0.45 and self._duration >= 45:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
+            # temperature lower if more than 79% extinguished
             if len(self._extinguished_fire_locations) / self._no_fires >= 0.8:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
+            # temperature close if less than 80% and more than 45% extinguished or less than 45% extinguished and fire duration less than 45 minutes
             if len(self._extinguished_fire_locations) / self._no_fires < 0.8 and len(self._extinguished_fire_locations) / self._no_fires > 0.45 or \
                 len(self._extinguished_fire_locations) / self._no_fires <= 0.45 and self._duration < 45:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
         if self._no_fires == 5:
+            # temperature higher if less than 41% extinguished and fire duration more than 44 minutes
             if len(self._extinguished_fire_locations) / self._no_fires <= 0.4 and self._duration >= 45:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
+            # temperature lower if more than 79% extinguished
             if len(self._extinguished_fire_locations) / self._no_fires >= 0.8:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
+            # temperature close if less than 80% and more than 40% extinguished or less than 41% extinguished and fire duration less than 45 minutes
             if len(self._extinguished_fire_locations) / self._no_fires < 0.8 and len(self._extinguished_fire_locations) / self._no_fires > 0.4 or \
                 len(self._extinguished_fire_locations) / self._no_fires <= 0.4 and self._duration < 45:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
         if self._no_fires == 3:
+            # temperature higher if 0% extinguished and fire duration more than 44 minutes
             if len(self._extinguished_fire_locations) / self._no_fires == 0 and self._duration >= 45:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
+            # temperature lower if more than 64% extinguished
             if len(self._extinguished_fire_locations) / self._no_fires >= 0.65:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
+            # temperature close if less than 65% and more than 0% extinguished or 0% extinguished and fire duration less than 45 minutes
             if len(self._extinguished_fire_locations) / self._no_fires < 0.65 and len(self._extinguished_fire_locations) / self._no_fires > 0 or \
                 len(self._extinguished_fire_locations) / self._no_fires == 0 and self._duration < 45:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
 
+        # send hidden messages used for GUI/display with icons
         self._send_message('Smoke spreads: ' + self._smoke + '.', self._name)
         self._send_message('Temperature: ' + self._temperature + '.', self._name)
         self._send_message('Location: ' + self._location + '.', self._name)
         self._send_message('Distance: ' + self._distance + '.', self._name)
 
+        # infinite loop until task is completed
         while True:
-            if Phase.EXTINGUISH_CHECK == self._phase:
-                for info in state.values():
-                    if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
-                        'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive':
-                        #self._fire_locations.append(info['location'])
-                        self._send_message('Extinguishing fire in ' + self._current_room + '.', self._name)
-                        if info['location'] not in self._extinguished_fire_locations:
-                            self._extinguished_fire_locations.append(info['location'])
-                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'duration_in_ticks': 10}
-                    if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire source' in info['name'] and self._tactic == 'defensive' and calculate_distances(self._current_location, info['location']) <= 3:
-                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'duration_in_ticks': 0}
-                self._searched_rooms_defensive.append(self._current_room)
-                self._phase = Phase.FIND_NEXT_GOAL
-
+            # give short introduction message to participant
             if Phase.INTRO == self._phase:
                 self._send_message('If you are ready to begin our mission, press the "Continue" button.', self._name)
                 if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
@@ -233,27 +245,49 @@ class robot(custom_agent_brain):
                 else:
                     return None, {}
 
+            # check if found fire should be extinguished and if yes, extinguish the fire
+            if Phase.EXTINGUISH_CHECK == self._phase:
+                if self.received_messages_content and 'Extinguishing' not in self.received_messages_content[-1]:
+                    for info in state.values():
+                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
+                            'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive':
+                            self._send_message('Extinguishing fire in ' + self._current_room + '.', self._name)
+                            self._decided_time = int(self._second)
+                            self._id = info['obj_id']
+                            if info['location'] not in self._extinguished_fire_locations:
+                                self._extinguished_fire_locations.append(info['location'])
+                            return Idle.__name__, {'action_duration': 0}
+                for info in state.values():    
+                    if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire source' in info['name'] and self._tactic == 'defensive' and calculate_distances(self._current_location, info['location']) <= 3:
+                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
+                if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
+                    self._searched_rooms_defensive.append(self._current_room)
+                    self._phase = Phase.FIND_NEXT_GOAL
+                    return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
+                else:
+                    return None, {}
+
+            # determine at which times the switch tactics situations occur
             if self._time_left - self._resistance >= 20 and self._time_left - self._resistance <= 25:
                 self._situation = 'switch 1'
-
             if self._time_left - self._resistance >= 35 and self._time_left - self._resistance <= 40:
                 self._situation = 'switch 2'
-
             if self._time_left - self._resistance >= 50 and self._time_left - self._resistance <= 55:
                 self._situation = 'switch 3'
-
             if self._time_left - self._resistance >= 65 and self._time_left - self._resistance <= 70:
                 self._situation = 'switch 4'
-
             if self._time_left - self._resistance >= 80 and self._time_left - self._resistance <= 85:
                 self._situation = 'switch 5'
 
+            # present the switch tactics situation once the robot leaves an office
             if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations:
                 self._situations.append(self._situation)
+                # determine the image name of the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
+                # calculate the predicted sensitivity for this situation
                 self._sensitivity = R_to_Py_plot_tactic(self._total_victims_cat, self._location_cat, self._duration, self._resistance, image_name)
                 self._plot_generated = True
-                
+                # determine exact image name depending on explanation condition
                 if self._condition == 'shap':
                     image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
                 if self._condition == 'util' and self._tactic == 'defensive':
@@ -261,7 +295,9 @@ class robot(custom_agent_brain):
                 if self._condition == 'util' and self._tactic == 'offensive':
                     image_name = "<img src='/static/images/util_plots/util-continue-offensive-final.svg'/>"
 
+                # allocate decision making to human because the predicted sensitivity is higher than the allocation threshold
                 if self._sensitivity > self._threshold:
+                    # send correct messages depending on current deployment tactic and explanation condition
                     if self._tactic == 'offensive':
                         self._deploy_time = self._offensive_deployment_time
                         if self._condition == 'shap':
@@ -301,14 +337,15 @@ class robot(custom_agent_brain):
                                                 We should decide whether to continue with the current defensive deployment, or switch to an offensive deployment. \
                                                 Please make this decision because the predicted moral sensitivity of this situation (<b>' + str(self._sensitivity) + '</b>) \
                                                 is above my allocation threshold.', self._name)
-                        
+                    # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
                     self._last_phase = self._phase
                     self._time = int(self._second)
                     self._phase = Phase.TACTIC
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
                 
+                # CONTINUE HERE: allocate decision making to robot because the predicted sensitivity is lower than or equal to allocation threshold
                 if self._sensitivity <= self._threshold:
                     if self._tactic == 'offensive':
                         self._deploy_time = self._offensive_deployment_time
@@ -354,7 +391,7 @@ class robot(custom_agent_brain):
                     self._last_phase = self._phase
                     self._time = int(self._second)
                     self._phase = Phase.TACTIC
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
 
             if Phase.TACTIC == self._phase:
                 if self._decide == 'human' and self._tactic == 'offensive':
@@ -381,6 +418,8 @@ class robot(custom_agent_brain):
                             if self.received_messages_content and self.received_messages_content[-1] == 'Switch':
                                 self._send_message('Switching to a defensive deployment after the offensive deployment of ' + str(self._deploy_time) + ' minutes.', self._name)
                                 #self._offensive_deployment_time = 0
+                                #if self._goal_victim:
+                                #    self._lost_victims.append(self._goal_victim)
                                 self._tactic = 'defensive'
                                 self._decide = None
                                 self._reallocated = False
@@ -440,6 +479,8 @@ class robot(custom_agent_brain):
                                 self._send_message('Switching to a defensive deployment after the offensive deployment of ' + str(self._offensive_deployment_time) + ' minutes, because the fire duration is more than 60 minutes \
                                                    and the estimated fire resistance to collapse is less than 15 minutes, making the chance of saving people and the building too low.', self._name)
                                 #self._offensive_deployment_time = 0
+                                if self._goal_victim:
+                                    self._lost_victims.append(self._goal_victim)
                                 self._plot_times.append(self._time_left - self._resistance)
                                 self._tactic = 'defensive'
                                 self._decide = None
@@ -524,7 +565,7 @@ class robot(custom_agent_brain):
                     self._last_phase = self._phase
                     self._time = int(self._second)
                     self._phase = Phase.LOCATE
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
 
                 if self._sensitivity <= self._threshold:
                     if self._condition == 'shap':
@@ -546,7 +587,7 @@ class robot(custom_agent_brain):
                     self._last_phase = self._phase
                     self._time = int(self._second)
                     self._phase = Phase.LOCATE
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
 
             if Phase.LOCATE == self._phase:
                 if self._decide == 'human':
@@ -567,15 +608,22 @@ class robot(custom_agent_brain):
                                 self._send_message('Not sending in fire fighters to help locate the fire source.', self._name)
                                 self._reallocated = False
                                 self._phase = self._last_phase
+
                             if self.received_messages_content and self.received_messages_content[-1] == 'Fire fighter':
                                 self._send_message('Sending in fire fighters to help locate the fire source.', self._name)
                                 self._send_message('Target 1 is ' + str(self._potential_source_offices[0][0]) + ' and ' + str(self._potential_source_offices[0][1]) + ' in ' \
                                                     + self._office_doors[self._potential_source_offices[0]] + ' target 2 is ' + str(self._potential_source_offices[-1][0]) + ' and ' \
                                                     + str(self._potential_source_offices[-1][1]) + ' in ' +  self._office_doors[self._potential_source_offices[-1]], self._name)
+                                return None, {}
+
+                            if self.received_messages_content and 'Safely back' in self.received_messages_content[-1]:   
                                 self._reallocated = False
                                 self._phase = self._last_phase
+                                return Idle.__name__, {'action_duration': 0}
+                            
                             else:
                                 return None, {}
+                        
                         else:
                             return None, {}
                 
@@ -591,18 +639,24 @@ class robot(custom_agent_brain):
                         if int(self._second) >= self._time + 15:
                             if not self._reallocated:
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
-                            if self._temperature_cat != 'higher' and self._resistance > 15:
-                                self._send_message('Sending in fire fighters to help locate because the estimated fire resistance to collapse (' + str(self._resistance) + ' minutes) is more than 15 minutes \
-                                                and the temperate is lower than the auto-ignition temperatures of present substances.', self._name)
+                            if self._temperature_cat != 'higher' and self._resistance > 15 and self.received_messages_content and 'Safely back' not in self.received_messages_content[-1]:
+                                self._send_message('Sending in fire fighters to help locate because the estimated fire resistance to collapse is more than 15 minutes \
+                                                    and the temperate is lower than the auto-ignition temperatures of present substances.', self._name)
                                 self._send_message('Target 1 is ' + str(self._potential_source_offices[0][0]) + ' and ' + str(self._potential_source_offices[0][1]) + ' in ' \
                                                     + self._office_doors[self._potential_source_offices[0]] + ' target 2 is ' + str(self._potential_source_offices[-1][0]) + ' and ' \
                                                     + str(self._potential_source_offices[-1][1]) + ' in ' +  self._office_doors[self._potential_source_offices[-1]], self._name)
+                                return None, {}
+
+                            if self.received_messages_content and 'Safely back' in self.received_messages_content[-1]:   
                                 self._reallocated = False
                                 self._phase = self._last_phase
+                                return Idle.__name__, {'action_duration': 0}
+
                             else:
                                 self._send_message('Not sending in fire fighters because the conditions are not safe enough for fire fighters to enter.', self._name)
                                 self._reallocated = False
                                 self._phase = self._last_phase
+                                return Idle.__name__, {'action_duration': 0}
                         else:
                             return None, {}
                 else:
@@ -639,7 +693,7 @@ class robot(custom_agent_brain):
                     self._total_victims_cat = 'unclear'
                 self._send_message('Victims rescued: ' + str(len(self._rescued_victims)) + '/' + str(self._total_victims) + '.', self._name)
                 for vic in remaining_victims:
-                    if vic in self._found_victims and vic not in self._lost_victims:
+                    if vic in self._found_victims and vic not in self._lost_victims and self._tactic != 'defensive':
                         self._goal_victim = vic
                         self._goal_location = remaining[vic]
                         if 'mild' in self._goal_victim:
@@ -648,7 +702,7 @@ class robot(custom_agent_brain):
                             self._door = state.get_room_doors(self._victim_locations[vic]['room'])[0]
                             self._doormat = state.get_room(self._victim_locations[vic]['room'])[-1]['doormat']
                             self._phase = Phase.PLAN_PATH_TO_ROOM
-                        return Idle.__name__, {'duration_in_ticks': 0}              
+                        return Idle.__name__, {'action_duration': 0}              
                 self._phase = Phase.PICK_UNSEARCHED_ROOM
 
             if Phase.PICK_UNSEARCHED_ROOM == self._phase:
@@ -718,17 +772,30 @@ class robot(custom_agent_brain):
                 self._phase = Phase.REMOVE_OBSTACLE_IF_NEEDED   
 
             if Phase.REMOVE_OBSTACLE_IF_NEEDED == self._phase:
-                objects = []
-                for info in state.values():
-                    if 'class_inheritance' in info and 'IronObject' in info['class_inheritance'] and 'iron' in info['obj_id'] and info not in objects:
-                        objects.append(info)
-                        self._send_message('Iron debris is blocking ' + str(self._door['room_name']) + '. Removing iron debris.', self._name)
-                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'duration_in_ticks': 10}
-
-                if len(objects) == 0:
+                # CONTINUE HERE REMOVE DEPENDENCE ON MESSAGE BUT RATHER USE NEW VARIABLE LIKE WAITING?
+                if self.received_messages_content and 'Removing' not in self.received_messages_content[-1] and 'Safely back' not in self.received_messages_content[-1]:
+                    for info in state.values():
+                        if 'class_inheritance' in info and 'IronObject' in info['class_inheritance'] and 'iron' in info['obj_id']:
+                            self._send_message('Iron debris is blocking ' + str(self._door['room_name']) + '. Removing iron debris.', self._name)
+                            self._decided_time = int(self._second)
+                            self._id = info['obj_id']
+                            return Idle.__name__, {'action_duration': 0}
+                        
+                if self._decided_time and int(self._second) < self._decided_time + 5:
+                    return None, {}
+                    
+                if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
+                    return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
+                            
+                if self._id and not state[{'obj_id': self._id}] or not self._id:
                     self._phase = Phase.ENTER_ROOM
+                    return Idle.__name__, {'action_duration': 0}
+                
+                else:
+                    return None, {}
                     
             if Phase.ENTER_ROOM == self._phase:
+                self._id = None
                 self._state_tracker.update(state)                 
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
@@ -824,7 +891,7 @@ class robot(custom_agent_brain):
                                         self._decide = 'human'
                                         self._time = int(self._second)
                                         self._phase = Phase.RESCUE
-                                        return Idle.__name__, {'duration_in_ticks': 0}
+                                        return Idle.__name__, {'action_duration': 0}
 
                                     if self._sensitivity <= self._threshold:
                                         if self._condition == 'shap':
@@ -848,7 +915,7 @@ class robot(custom_agent_brain):
                                         self._plot_times.append(self._time_left - self._resistance)
                                         self._time = int(self._second)
                                         self._phase = Phase.RESCUE
-                                        return Idle.__name__, {'duration_in_ticks': 0}
+                                        return Idle.__name__, {'action_duration': 0}
 
                     return action, {}
 
@@ -900,7 +967,7 @@ class robot(custom_agent_brain):
                                 self._decide = 'human'
                                 self._time = int(self._second)
                                 self._phase = Phase.PRIORITY
-                                return Idle.__name__, {'duration_in_ticks': 0}
+                                return Idle.__name__, {'action_duration': 0}
 
                             if self._sensitivity <= self._threshold:
                                 if self._condition == 'shap':
@@ -924,7 +991,7 @@ class robot(custom_agent_brain):
                                 self._plot_times.append(self._time_left - self._resistance)
                                 self._time = int(self._second)
                                 self._phase = Phase.PRIORITY
-                                return Idle.__name__, {'duration_in_ticks': 0}
+                                return Idle.__name__, {'action_duration': 0}
 
                 if self._tactic == 'offensive':
                     self._searched_rooms_offensive.append(self._door['room_name'])
@@ -932,9 +999,9 @@ class robot(custom_agent_brain):
                     self._searched_rooms_defensive.append(self._door['room_name'])
                 self._phase = Phase.FIND_NEXT_GOAL
                 #if self._phase == Phase.FIND_NEXT_GOAL:
-                #    return Idle.__name__,{'duration_in_ticks': 20}
+                #    return Idle.__name__,{'action_duration': 20}
                 #if self._phase != Phase.FIND_NEXT_GOAL:
-                #    return Idle.__name__,{'duration_in_ticks': 50}
+                #    return Idle.__name__,{'action_duration': 50}
 
             if Phase.RESCUE == self._phase:
                 if self._decide == 'human':
@@ -951,6 +1018,7 @@ class robot(custom_agent_brain):
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
                             self._send_message('If you want to send in a fire fighter to rescue ' + self._recent_victim + ', press the "Fire fighter" button. \
                                             If you do not want to send one in, press the "Continue" button.', self._name)
+                            
                             if self.received_messages_content and self.received_messages_content[-1] == 'Fire fighter':
                                 self._send_message('Sending in fire fighter to rescue ' + self._recent_victim + '.', self._name)
                                 vic_x = str(self._victim_locations[self._recent_victim]['location'][0])
@@ -958,15 +1026,21 @@ class robot(custom_agent_brain):
                                 drop_x = str(self._remaining[self._recent_victim][0])
                                 drop_y = str(self._remaining[self._recent_victim][1])
                                 self._send_message('Coordinates vic ' + vic_x + ' and ' + vic_y + ' coordinates drop ' + drop_x + ' and ' + drop_y, self._name)
-                                if self._recent_victim not in self._rescued_victims:
-                                    self._rescued_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 return None, {}
                             
                             if self.received_messages_content and self._recent_victim in self.received_messages_content[-1] and 'Delivered' in self.received_messages_content[-1]:
+                                if self._recent_victim not in self._rescued_victims:
+                                    self._rescued_victims.append(self._recent_victim)
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
+
+                            if self.received_messages_content and 'Safely back' in self.received_messages_content[-1]:
+                                self._reallocated = False
+                                self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
 
                             if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                                 self._send_message('Not sending in fire fighter to rescue ' + self._recent_victim + '.', self._name)
@@ -974,6 +1048,7 @@ class robot(custom_agent_brain):
                                 self._searched_rooms_offensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
                             else:
                                 return None, {}
                         else:
@@ -991,30 +1066,43 @@ class robot(custom_agent_brain):
                         if int(self._second) >= self._time + 15:
                             if not self._reallocated:
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
-                            if self._temperature_cat != 'higher' and self._resistance > 15 and 'Delivered' not in self.received_messages_content[-1]:
+                            if self._temperature_cat != 'higher' and self._resistance > 15 and 'Delivered' not in self.received_messages_content[-1] and 'Safely back' not in self.received_messages_content[-1]:
                                 self._send_message('Sending in a fire fighter to rescue ' + self._recent_victim + ' because the temperature is lower than the auto-ignition temperatures of present substances \
                                                     and the estimated fire resistance to collapse is more than 15 minutes.', self._name)
+                                self._decided = True
                                 vic_x = str(self._victim_locations[self._recent_victim]['location'][0])
                                 vic_y = str(self._victim_locations[self._recent_victim]['location'][1])
                                 drop_x = str(self._remaining[self._recent_victim][0])
                                 drop_y = str(self._remaining[self._recent_victim][1])
                                 self._send_message('Coordinates vic ' + vic_x + ' and ' + vic_y + ' coordinates drop ' + drop_x + ' and ' + drop_y, self._name)
-                                if self._recent_victim not in self._rescued_victims:
-                                    self._rescued_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 return None, {}
                             
                             if self.received_messages_content and self._recent_victim in self.received_messages_content[-1] and 'Delivered' in self.received_messages_content[-1]:
+                                if self._recent_victim not in self._rescued_victims:
+                                    self._rescued_victims.append(self._recent_victim)
                                 self._reallocated = False
+                                self._decided = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
+
+                            if self.received_messages_content and 'Safely back' in self.received_messages_content[-1]:
+                                self._reallocated = False
+                                self._decided = False
+                                self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
 
                             else:
-                                self._send_message('Not sending in a fire fighter to rescue ' + self._recent_victim + ' because the conditions are not safe enough for fire fighters to enter.', self._name)
-                                self._lost_victims.append(self._recent_victim)
-                                self._searched_rooms_offensive.append(self._door['room_name'])
-                                self._reallocated = False
-                                self._phase = Phase.FIND_NEXT_GOAL
+                                if not self._decided: 
+                                    self._send_message('Not sending in a fire fighter to rescue ' + self._recent_victim + ' because the conditions are not safe enough for fire fighters to enter.', self._name)
+                                    self._lost_victims.append(self._recent_victim)
+                                    self._searched_rooms_offensive.append(self._door['room_name'])
+                                    self._reallocated = False
+                                    self._phase = Phase.FIND_NEXT_GOAL
+                                    return Idle.__name__, {'action_duration': 0}
+                                else:
+                                    return None, {}
                         else:
                             return None, {}
                 else:
@@ -1034,23 +1122,30 @@ class robot(custom_agent_brain):
                             if not self._reallocated:
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
                             self._send_message('If you want to first extinguish the fire in office ' + self._door['room_name'].split()[-1] + ', press the "Extinguish" button. \
-                                            If you want to first evacuate the ' + self._vic_string + ' in office ' + self._door['room_name'].split()[-1] + ', press the "Evacuate" button.', self._name)
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Extinguish' or self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] :
+                                                If you want to first evacuate the ' + self._vic_string + ' in office ' + self._door['room_name'].split()[-1] + ', press the "Evacuate" button.', self._name)
+                            if self.received_messages_content and self.received_messages_content[-1] == 'Extinguish':# or self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] :
+                                self._decided_time = int(self._second)
                                 self._send_message('Extinguishing the fire in office ' + self._door['room_name'].split()[-1] + ' first.', self._name)
                                 for info in state.values():
                                     if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
                                         self._id = info['obj_id']
                                         if info['location'] not in self._extinguished_fire_locations:
                                             self._extinguished_fire_locations.append(info['location'])
-                                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'duration_in_ticks': 10}
+                                return Idle.__name__, {'action_duration': 0}
+                                        
+                            if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
+                                return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
+                                        
                             if self.received_messages_content and self.received_messages_content[-1] == 'Evacuate':
                                 self._send_message('Evacuating the ' + self._vic_string + ' in office ' + self._door['room_name'].split()[-1] + ' first.', self._name)
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
+                            
                             if self._id and not state[{'obj_id': self._id}]:
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
-                                return Idle.__name__, {'duration_in_ticks': 0}
+                                return Idle.__name__, {'action_duration': 0}
                             else:
                                 return None, {}
                         else:
@@ -1068,27 +1163,37 @@ class robot(custom_agent_brain):
                         if int(self._second) >= self._time + 15:
                             if not self._reallocated:
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
+                            
                             if self._location == '?' and self._smoke == 'fast':
                                 self._send_message('Evacuating the ' + self._vic_string + ' in office ' + self._door['room_name'].split()[-1] + ' first because the fire source is not located yet and the smoke is spreading fast.', self._name)
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                                return Idle.__name__, {'action_duration': 0}
+                            
                             else:
-                                self._send_message('Extinguishing the fire in office ' + self._door['room_name'].split()[-1] + ' first because these are the general guidelines.', self._name)
-                                for info in state.values():
-                                    if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
-                                        self._id = info['obj_id']
-                                        if info['location'] not in self._extinguished_fire_locations:
-                                            self._extinguished_fire_locations.append(info['location'])
-                                        return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'duration_in_ticks': 10}
+                                if self.received_messages_content and 'Extinguishing' not in self.received_messages_content[-1]:
+                                    self._send_message('Extinguishing the fire in office ' + self._door['room_name'].split()[-1] + ' first because these are the general guidelines.', self._name)
+                                    self._decided_time = int(self._second)
+                                    for info in state.values():
+                                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+                                            self._id = info['obj_id']
+                                            if info['location'] not in self._extinguished_fire_locations:
+                                                self._extinguished_fire_locations.append(info['location'])
+                                    return Idle.__name__, {'action_duration': 0}
+                                
+                                if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
+                                    return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
+
+                                if self._id and not state[{'obj_id': self._id}]:
+                                    self._reallocated = False
+                                    self._phase = Phase.FIND_NEXT_GOAL
+                                    return Idle.__name__, {'action_duration': 0}
+
+                                else:
+                                    return None, {}
+
                         else:
                             return None, {}
-
-                    if self._id and not state[{'obj_id': self._id}]:
-                        self._reallocated = False
-                        self._phase = Phase.FIND_NEXT_GOAL
-                        return Idle.__name__, {'duration_in_ticks': 0}
-                    else:
-                        return None, {}
                     
                 else:
                     return None, {}

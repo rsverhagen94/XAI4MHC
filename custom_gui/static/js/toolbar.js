@@ -518,6 +518,9 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("stones", "<img src='/static/images/stone-small.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("tree", "<img src='/static/images/tree-fallen2.svg' height= 30 width=30/>");
 
+    mssg_content = mssg_content.replaceAll("ABORTING TASK!", "<span style='font-weight:bold; color:red;'>ABORTING TASK!</span>");
+
+
     // mssg_content = mssg_content.replaceAll("plot", "<img src='/static/images/sensitivity_plot.svg' />");
 
 
@@ -623,7 +626,7 @@ function add_message(chatroom_ID, mssg) {
     }
 
     // add the message text to the message div
-    if (!mssg_content.includes("Counterbalancing condition") && !mssg_content.includes("Time left:") && !mssg_content.includes("Fire duration:") && !mssg_content.includes("Victims rescued:") && !mssg_content.includes("Smoke spreads:") && !mssg_content.includes("Temperature:") && !mssg_content.includes("Distance:") && !mssg_content.includes("Location:") && !mssg_content.includes("Coordinates") && !mssg_content.includes("Target")) {
+    if (!mssg_content.includes("Counterbalancing condition") && !mssg_content.includes("No intervention") && !mssg_content.includes("Time left:") && !mssg_content.includes("Fire duration:") && !mssg_content.includes("Victims rescued:") && !mssg_content.includes("Smoke spreads:") && !mssg_content.includes("Temperature:") && !mssg_content.includes("Distance:") && !mssg_content.includes("Location:") && !mssg_content.includes("Coordinates") && !mssg_content.includes("Target")) {
     var content = document.createElement('span');
     content.className = "chat-content";
     content.innerHTML = mssg_content;

@@ -198,8 +198,6 @@ class RemoveObjectTogether(Action):
         assert 'object_id' in kwargs.keys()  # assert if object_id is given.
         object_id = kwargs['object_id']  # assign
         remove_range = 1  # default remove range
-        other_agent = world_state[{"name": "RescueBot"}]
-        other_human = world_state[{"name": "Human"}]
         if 'remove_range' in kwargs.keys():  # if remove range is present
             assert isinstance(kwargs['remove_range'], int)  # should be of integer
             assert kwargs['remove_range'] >= 0  # should be equal or larger than 0
@@ -211,7 +209,6 @@ class RemoveObjectTogether(Action):
         # get the current agent (exists, otherwise the is_possible failed)
         agent_avatar = grid_world.registered_agents[agent_id]
         agent_loc = agent_avatar.location  # current location
-        reg_ag.change_property("img_name", "/images/robot-final4.svg")
         #reg_ag.change_property("visualize_size", 1)
         # Get all objects in the remove_range
         objects_in_range = grid_world.get_objects_in_range(agent_loc, object_type="*", sense_range=remove_range)

@@ -35,8 +35,14 @@ class firefighter(custom_agent_brain):
     def __init__(self, name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition):
         super().__init__(name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition)
         self._phase = Phase.WAIT_FOR_CALL
+        self._resistance = resistance
+        self._duration = duration
+        self._time_left = resistance
+        self._no_fires = no_fires
+        self._extinguished_fires = []
         self._send_messages = []
         self._rescued = []
+        self._modulos = []
         self._goal_victim = None
         self._location = '?'
 
@@ -45,11 +51,42 @@ class firefighter(custom_agent_brain):
         self._navigator = Navigator(agent_id=self.agent_id,action_set=self.action_set, algorithm=Navigator.A_STAR_ALGORITHM)
 
     def filter_bw4t_observations(self, state):
+        self._second = state['World']['tick_duration'] * state['World']['nr_ticks']
+        if int(self._second) % 6 == 0 and int(self._second) not in self._modulos:
+            self._modulos.append(int(self._second))
+            self._resistance -= 1
+            self._duration += 1
         return state
 
     def decide_on_bw4t_action(self, state: State):
-        #print(self._phase)
+        if self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] and self.received_messages_content[-1] not in self._extinguished_fires:
+            self._extinguished_fires.append(self.received_messages_content[-1])
         agent_name = state[self.agent_id]['obj_id']
+
+        if self._no_fires == 7:
+            if len(self._extinguished_fires) / self._no_fires <= 0.45 and self._duration >= 45:
+                self._temperature = '>'
+            if len(self._extinguished_fires) / self._no_fires >= 0.8:
+                self._temperature = '<'
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.45 or \
+                len(self._extinguished_fires) / self._no_fires <= 0.45 and self._duration < 45:
+                self._temperature = '<≈'
+        if self._no_fires == 5:
+            if len(self._extinguished_fires) / self._no_fires <= 0.4 and self._duration >= 45:
+                self._temperature = '>'
+            if len(self._extinguished_fires) / self._no_fires >= 0.8:
+                self._temperature = '<'
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.4 or \
+                len(self._extinguished_fires) / self._no_fires <= 0.4 and self._duration < 45:
+                self._temperature = '<≈'
+        if self._no_fires == 3:
+            if len(self._extinguished_fires) / self._no_fires == 0 and self._duration >= 45:
+                self._temperature = '>'
+            if len(self._extinguished_fires) / self._no_fires >= 0.65:
+                self._temperature = '<'
+            if len(self._extinguished_fires) / self._no_fires < 0.65 and len(self._extinguished_fires) / self._no_fires > 0 or \
+                len(self._extinguished_fires) / self._no_fires == 0 and self._duration < 45:
+                self._temperature = '<≈'
 
         while True:            
             if Phase.WAIT_FOR_CALL == self._phase:
@@ -58,11 +95,11 @@ class firefighter(custom_agent_brain):
                     self._drop_location = tuple((int(msg.split()[-3]), int(msg.split()[-1])))
                     self._goal_location = tuple((int(msg.split()[2]), int(msg.split()[4])))
                     self._phase = Phase.PLAN_PATH_TO_VICTIM
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
                 if self.received_messages_content and 'Target' in self.received_messages_content[-1] and self._location == '?' and agent_name != 'fire_fighter_1':
                     self._msg = self.received_messages_content[-1]
                     self._phase = Phase.PLAN_PATH_TO_ROOM
-                    return Idle.__name__, {'duration_in_ticks': 0}
+                    return Idle.__name__, {'action_duration': 0}
                 else:
                     return None, {}
                 
@@ -93,10 +130,17 @@ class firefighter(custom_agent_brain):
                     and 'AreaTile' in info['class_inheritance']
                     and 'room_name' in info
                     and info['room_name'] == area]
-                self._room_tiles = room_tiles               
-                self._navigator.reset_full()
-                self._navigator.add_waypoints(room_tiles)
-                self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
+                if self._resistance > 15 and self._temperature != '>':
+                    self._room_tiles = room_tiles               
+                    self._navigator.reset_full()
+                    self._navigator.add_waypoints(room_tiles)
+                    self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
+                else:
+                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for us to continue searching for the fire source.', agent_name.replace('_', ' ').capitalize())
+                    self.agent_properties["img_name"] = "/images/human-danger2.gif"
+                    self.agent_properties["visualize_size"] = 2
+                    self._phase = Phase.PLAN_EXIT
+                    return Idle.__name__, {'action_duration': 0}
 
             if Phase.FOLLOW_ROOM_SEARCH_PATH == self._phase:
                 self._state_tracker.update(state)
@@ -116,6 +160,8 @@ class firefighter(custom_agent_brain):
                 self._navigator.reset_full()
                 if agent_name and agent_name == 'fire_fighter_2':
                     loc = (0, 11)
+                if agent_name and agent_name == 'fire_fighter_1':
+                    loc = (0, 12)
                 if agent_name and agent_name == 'fire_fighter_3':
                     loc = (0, 13)
                 self._navigator.add_waypoints([loc])
@@ -127,7 +173,10 @@ class firefighter(custom_agent_brain):
                 if action != None:
                     return action, {}
                 self._phase = Phase.WAIT_FOR_CALL
-                return IdleDisappear.__name__, {'duration_in_ticks': 0}
+                self.agent_properties["img_name"] = "/images/rescue-man-final3.svg"
+                self.agent_properties["visualize_size"] = 1
+                self._send_message('Safely back outside the building with a resistance to collapse of ' + str(self._resistance) + ' minutes.', agent_name.replace('_', ' ').capitalize())
+                return IdleDisappear.__name__, {'action_duration': 0}
 
             if Phase.PLAN_PATH_TO_VICTIM == self._phase:
                 self._navigator.reset_full()
@@ -142,11 +191,21 @@ class firefighter(custom_agent_brain):
                 self._phase = Phase.TAKE_VICTIM
 
             if Phase.TAKE_VICTIM == self._phase:
-                self._phase = Phase.PLAN_PATH_TO_DROPPOINT
-                for info in state.values():
-                    if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
-                        self._goal_victim = info['img_name'][8:-4]
-                        return CarryObject.__name__, {'object_id': info['obj_id']}
+                if self._resistance > 15 and self._temperature != '>':
+                    self._phase = Phase.PLAN_PATH_TO_DROPPOINT
+                    for info in state.values():
+                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                            self._goal_victim = info['img_name'][8:-4]
+                            return CarryObject.__name__, {'object_id': info['obj_id']}
+                else:
+                    for info in state.values():
+                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                            self._goal_victim = info['img_name'][8:-4]
+                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for me to continue rescuing ' + self._goal_victim + '.', agent_name.replace('_', ' ').capitalize())
+                    self.agent_properties["img_name"] = "/images/human-danger2.gif"
+                    self.agent_properties["visualize_size"] = 2
+                    self._phase = Phase.PLAN_EXIT
+                    return Idle.__name__, {'action_duration': 0}
 
             if Phase.PLAN_PATH_TO_DROPPOINT == self._phase:
                 self._navigator.reset_full()
@@ -165,7 +224,7 @@ class firefighter(custom_agent_brain):
                 self._send_message('Delivered ' + self._goal_victim + ' at the drop zone.', agent_name.replace('_', ' ').capitalize())
                 self._phase = Phase.WAIT_FOR_CALL
                 self._goal_victim = None
-                return Drop.__name__, {'duration_in_ticks':0}
+                return Drop.__name__, {'action_duration':0}
 
     def _send_message(self, mssg, sender):
         msg = Message(content=mssg, from_id=sender)

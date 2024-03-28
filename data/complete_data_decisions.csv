@@ -1,0 +1,51 @@
+id,explanation,counterbalance,task,threshold,robot,decision,decision_cat,sensitivity
+id99;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id99;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;6.5
+id99;shap;1;6;5.0;Brutus;CRR_MD_robot;no intervention;5.5
+id99;shap;1;6;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;6.5
+id1;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id1;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;6.5
+id1;shap;1;6;5.0;Brutus;CRR_MD_robot;no intervention;5.5
+id1;shap;1;6;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id1;shap;1;6;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.2
+id;shap;1;1;5.0;Brutus;CRR_MD_robot;no intervention;5.5
+id;shap;1;1;5.0;Brutus;FRR_MD_self;no intervention;5.0
+id;shap;1;1;5.0;Brutus;CRR_ND_self;no intervention;2.3
+id;shap;1;1;5.0;Brutus;CRR_ND_self;no intervention;2.6
+id;shap;1;1;5.0;Brutus;FRR_MD_self;no intervention;5.0
+id;shap;1;1;5.0;Brutus;CRR_ND_self;no intervention;2.3
+id;shap;1;1;5.0;Brutus;FRR_MD_self;no intervention;4.9
+id;shap;1;1;5.0;Brutus;FR_ND_self;allocate to self;3.9
+id;shap;1;1;5.0;Brutus;CR_MD_self;allocate to self;4.8
+id;shap;1;1;5.0;Brutus;CR_MD_self;allocate to self;4.7
+id;shap;5;6;5.0;Brutus;CRR_MD_robot;no intervention;5.5
+id;shap;5;6;5.0;Brutus;CRR_ND_self;no intervention;2.0
+id;shap;5;6;5.0;Brutus;CRR_MD_robot;no intervention;5.1
+id;shap;5;6;5.0;Brutus;CRR_ND_self;no intervention;2.2
+id;shap;5;6;5.0;Brutus;FRR_MD_self;no intervention;5.0
+id;shap;5;6;5.0;Brutus;CRR_ND_self;no intervention;3.9
+id;shap;5;6;5.0;Brutus;FRR_MD_self;no intervention;5.0
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;4.1
+id;shap;9;2;5.0;Brutus;FRR_MD_self;no intervention;4.2
+id;shap;9;2;5.0;Brutus;FRR_MD_self;no intervention;4.2
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;2.2
+id;shap;9;2;5.0;Brutus;FRR_MD_self;no intervention;4.2
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;3.8
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;2.2
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;4.1
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;3.4
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;4.0
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;4.1
+id;shap;9;2;5.0;Brutus;FRR_MD_self;no intervention;4.3
+id;shap;9;2;5.0;Brutus;CRR_ND_self;no intervention;3.9
+id;shap;13;3;5.0;Brutus;FRR_MD_self;no intervention;4.8
+id;shap;13;3;5.0;Brutus;CRR_ND_self;no intervention;2.4
+id;shap;13;3;5.0;Brutus;CRR_ND_self;no intervention;4.1
+id;shap;13;3;5.0;Brutus;CRR_ND_self;no intervention;4.0
+id;shap;13;3;5.0;Brutus;CRR_ND_self;no intervention;4.1
+id;shap;13;3;5.0;Brutus;CRR_MD_robot;no intervention;5.4
+id;shap;13;3;5.0;Brutus;CRR_ND_self;no intervention;4.0

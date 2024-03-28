@@ -33,8 +33,8 @@ class custom_agent_brain(agent_brain, ABC):
         Final . Agents must override decide_on_bw4t_action instead
         '''
         act,params = self.decide_on_bw4t_action(state)
-        params['grab_range']=1
-        params['max_objects']=1
+        params['grab_range'] = 1
+        params['max_objects'] = 1
         #water_locs = []
         #if state[{"name": "water"}]:
         #    for water in state[{"name": "water"}]:
@@ -58,7 +58,16 @@ class custom_agent_brain(agent_brain, ABC):
         #    if params['size'] == 1.25:
         #        params['action_duration'] = 200
 
-        return act,params
+        #if act == 'RemoveObject' and 'iron' in params['object_id']:
+        #    params['action_duration'] = 10
+        #if act == 'RemoveObject' and 'fire' in params['object_id'] or act == 'RemoveObject' and 'source' in params['object_id']:
+        #    if params['size'] == 2:
+        #        params['action_duration'] = 10
+            #params['action_duration'] = 10
+        #if act == 'RemoveObject' and 'fire' in params['object_id'] and 'source' in params['object_id']:
+        #    params['action_duration'] = 0
+
+        return act, params
     
     def filter_observations(self,state:State)->State:
         '''

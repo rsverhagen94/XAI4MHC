@@ -17,8 +17,12 @@ class message_logger(GridWorldLogger):
     def log(self, grid_world: GridWorld, agent_data: dict):
 
         log_data = {
+            'threshold': '',
             'total_number_messages_human': 0,
             'total_number_messages_robot': 0,
+            'firefighter_decisions': 0,
+            'firefighter_danger': 0,
+            'firefighter_danger_rate': 0,
             'total_allocations_human': 0,
             'total_allocations_robot': 0,
             'total_allocations': 0,
@@ -28,6 +32,8 @@ class message_logger(GridWorldLogger):
             'incorrect_behavior_rate': 0,
             'incorrect_intervention_rate': 0,
             'correct_intervention_rate': 0,
+            'sensitivity': '',
+            'decision': '',
             'CRR_ND_self': 0,
             'FR_ND_self': 0,
             'FRR_MD_self': 0,
@@ -42,6 +48,8 @@ class message_logger(GridWorldLogger):
         t = grid_world.current_nr_ticks - 1
         tot_messages_human = 0
         tot_messages_robot = 0
+        firefighter_danger = 0
+        firefighter_decisions = 0
         tot_allocations_human = 0
         tot_allocations_robot = 0
         CRR_ND_self = 0
@@ -53,6 +61,7 @@ class message_logger(GridWorldLogger):
         CRR_ND_robot = 0
         FR_ND_robot = 0
         sensitivity = ''
+        decision = ''
         processed_messages = []
         interventions_sensitivity = []
 
@@ -77,39 +86,75 @@ class message_logger(GridWorldLogger):
 
                         if 'No intervention' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[6]) < 4.2:
                             CRR_ND_self += 1
+                            decision = 'CRR_ND_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'No intervention' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[6]) >= 4.2 and float(mssg.content.split()[6]) <= 5:
                             FRR_MD_self += 1
+                            decision = 'FRR_MD_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'No intervention' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[6]) > 5:
                             CRR_MD_robot += 1
+                            decision = 'CRR_MD_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'No intervention' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[6]) < 3.5:
                             CRR_ND_self += 1
+                            decision = 'CRR_ND_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'No intervention' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[6]) >= 3.5 and float(mssg.content.split()[6]) < 4.2:
                             CRR_ND_robot += 1
+                            decision = 'CRR_ND_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'No intervention' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[6]) >= 4.2:
                             CRR_MD_robot += 1
+                            decision = 'CRR_MD_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[6])
 
                         if 'Reallocating' in mssg.content and 'to you' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[9]) < 4.2:
                             FR_ND_self += 1
+                            decision = 'FR_ND_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[9])
 
                         if 'Reallocating' in mssg.content and 'to you' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[9]) >= 4.2 and float(mssg.content.split()[9]) <= 5:
                             CR_MD_self += 1
+                            decision = 'CR_MD_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[9])
 
                         if 'Reallocating' in mssg.content and 'to you' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) < 3.5:
                             FR_ND_self += 1
+                            decision = 'FR_ND_self'
+                            tot_allocations_robot += 1
+                            sensitivity = float(mssg.content.split()[9])
 
                         if 'Reallocating' in mssg.content and 'to me' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[9]) > 5:
                             FR_MD_robot += 1
+                            decision = 'FR_MD_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[9])
 
                         if 'Reallocating' in mssg.content and 'to me' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) >= 3.5 and float(mssg.content.split()[9]) < 4.2:
                             FR_ND_robot += 1
+                            decision = 'FR_ND_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[9])
 
                         if 'Reallocating' in mssg.content and 'to me' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) >= 4.2:
                             FR_MD_robot += 1
+                            decision = 'FR_MD_robot'
+                            tot_allocations_human += 1
+                            sensitivity = float(mssg.content.split()[9])
                             
                         if 'human' in mssg.from_id:
                             tot_messages_human += 1
@@ -117,20 +162,24 @@ class message_logger(GridWorldLogger):
                         if 'Titus' in mssg.from_id and 'No intervention' not in mssg.content or 'Brutus' in mssg.from_id and 'No intervention' not in mssg.content:
                             tot_messages_robot += 1
 
-                        if 'above my allocation self._threshold' in mssg.content:
-                            tot_allocations_human += 1
+                        if 'ABORTING TASK' in mssg.content:
+                            firefighter_danger += 1
 
-                        if 'below my allocation self._threshold' in mssg.content:
-                            tot_allocations_robot += 1
+                        if 'Sending in' in mssg.content and 'Not sending in' not in mssg.content:
+                            firefighter_decisions += 1
 
-                        #if 'Reallocating' in mssg.content:
-                        #    tot_interventions += 1
-                        #    interventions_sensitivity.append(float(mssg.content.split()[9]))
-                            
+        log_data['threshold'] = self._threshold
         log_data['total_number_messages_human'] = tot_messages_human
         log_data['total_number_messages_robot'] = tot_messages_robot
         log_data['total_allocations_human'] = tot_allocations_human
         log_data['total_allocations_robot'] = tot_allocations_robot
+        log_data['firefighter_danger'] = firefighter_danger
+        log_data['firefighter_decisions'] = firefighter_decisions
+        log_data['sensitivity'] = sensitivity
+        log_data['decision'] = decision
+
+        if firefighter_decisions > 0:
+            log_data['firefighter_danger_rate'] = firefighter_danger / firefighter_decisions
 
         if self._threshold == '5.0':
             tot_allocations = CRR_ND_self + FR_ND_self + FRR_MD_self + CR_MD_self + CRR_MD_robot + FR_MD_robot
