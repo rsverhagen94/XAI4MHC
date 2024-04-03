@@ -66,44 +66,44 @@ class firefighter(custom_agent_brain):
         # determine temperature based on the number of fires in the building, fire resistance, and number of extinguished fires
         if self._no_fires == 7:
             # temperature higher if less than 46% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires <= 0.45 and self._resistance <= 20:
+            if len(self._extinguished_fires) / self._no_fires <= 0.45 and self._resistance <= 20:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
             # temperature lower if more than 79% extinguished
-            if len(self._extinguished_fire_locations) / self._no_fires >= 0.8:
+            if len(self._extinguished_fires) / self._no_fires >= 0.8:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
             # temperature close if less than 80% and more than 45% extinguished or less than 45% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires < 0.8 and len(self._extinguished_fire_locations) / self._no_fires > 0.45 or \
-                len(self._extinguished_fire_locations) / self._no_fires <= 0.45 and self._resistance > 20:
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.45 or \
+                len(self._extinguished_fires) / self._no_fires <= 0.45 and self._resistance > 20:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
         if self._no_fires == 5:
             # temperature higher if less than 41% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires <= 0.4 and self._resistance <= 20:
+            if len(self._extinguished_fires) / self._no_fires <= 0.4 and self._resistance <= 20:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
             # temperature lower if more than 79% extinguished
-            if len(self._extinguished_fire_locations) / self._no_fires >= 0.8:
+            if len(self._extinguished_fires) / self._no_fires >= 0.8:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
             # temperature close if less than 80% and more than 40% extinguished or less than 41% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires < 0.8 and len(self._extinguished_fire_locations) / self._no_fires > 0.4 or \
-                len(self._extinguished_fire_locations) / self._no_fires <= 0.4 and self._resistance > 20:
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.4 or \
+                len(self._extinguished_fires) / self._no_fires <= 0.4 and self._resistance > 20:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
         if self._no_fires == 3:
             # temperature higher if 0% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires == 0 and self._resistance <= 20:
+            if len(self._extinguished_fires) / self._no_fires == 0 and self._resistance <= 20:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
             # temperature lower if more than 64% extinguished
-            if len(self._extinguished_fire_locations) / self._no_fires >= 0.65:
+            if len(self._extinguished_fires) / self._no_fires >= 0.65:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
             # temperature close if less than 65% and more than 0% extinguished or 0% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires < 0.65 and len(self._extinguished_fire_locations) / self._no_fires > 0 or \
-                len(self._extinguished_fire_locations) / self._no_fires == 0 and self._resistance > 20:
+            if len(self._extinguished_fires) / self._no_fires < 0.65 and len(self._extinguished_fires) / self._no_fires > 0 or \
+                len(self._extinguished_fires) / self._no_fires == 0 and self._resistance > 20:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
 
@@ -141,14 +141,14 @@ class firefighter(custom_agent_brain):
 
             if Phase.PLAN_ROOM_SEARCH_PATH == self._phase:
                 if agent_name and agent_name == 'fire_fighter_2':
-                    area = 'office ' + self._msg.split()[7]
+                    self._area = 'office ' + self._msg.split()[7]
                 if agent_name and agent_name == 'fire_fighter_3':
-                    area = 'office ' + self._msg.split()[-1]
+                    self._area = 'office ' + self._msg.split()[-1]
                 room_tiles = [info['location'] for info in state.values()
                     if 'class_inheritance' in info 
                     and 'AreaTile' in info['class_inheritance']
                     and 'room_name' in info
-                    and info['room_name'] == area]
+                    and info['room_name'] == self._area]
                 if self._resistance > 15 and self._temperature != '>':
                     self._room_tiles = room_tiles               
                     self._navigator.reset_full()
@@ -167,9 +167,9 @@ class firefighter(custom_agent_brain):
                 if action != None:                   
                     for info in state.values():
                         if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id']:
-                            self._send_message('Fire source located and pinned on the map.', agent_name.replace('_', ' ').capitalize())
+                            self._send_message('Fire source located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
-                            action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire source')
+                            action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire source in ' + self._area)
                             self._phase = Phase.PLAN_EXIT
                             return AddObject.__name__, action_kwargs
                     return action, {}

@@ -64,7 +64,7 @@ class robot(custom_agent_brain):
         self._lost_victims = []
         self._modulos = []
         self._send_messages = []
-        self._fire_locations = []
+        self._fire_locations = {}
         self._extinguished_fire_locations = []
         self._room_tiles = []
         self._situations = []
@@ -147,27 +147,27 @@ class robot(custom_agent_brain):
                 self._room_tiles.append(info['location'])
             if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
                 if not self._fire_source_coords:
-                    self._send_message('Found fire source!', self._name)
+                    self._send_message('Found fire source in ' + self._current_room + '!', self._name)
                     self._fire_source_coords = info['location']
-                    action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire source')
+                    self._fire_locations[self._current_room] = info['location']
+                    action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire source in ' + self._current_room)
                     return AddObject.__name__, action_kwargs
                 self._location = 'found'
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
             if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
-                if info['location'] not in self._fire_locations:
+                if info['location'] not in self._fire_locations.values() and self._current_room not in self._fire_locations.keys():
                     self._send_message('Found fire in ' + self._current_room + '.', self._name)
-                    self._fire_locations.append(info['location'])
+                    self._fire_locations[self._current_room] = info['location']
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
             if 'class_inheritance' in info and 'SmokeObject' in info['class_inheritance'] and 'smog' in info['obj_id']:
                 if info['location'] in self._office_doors.keys() and info['location'] not in self._potential_source_offices:
                     self._potential_source_offices.append(info['location'])
-
         # check if fire fighters already found the fire source
-        if self.received_messages_content and self.received_messages_content[-1] == 'Fire source located and pinned on the map.':
+        if self.received_messages_content and 'Fire source located' in self.received_messages_content[-1] and 'pinned on the map' in self.received_messages_content[-1]:
             self._location = 'found' 
 
         # save the coordinates of the fire source
@@ -175,7 +175,9 @@ class robot(custom_agent_brain):
             for info in state.values():
                 if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire source' in info['name']:
                     self._fire_source_coords = info['location']
-        
+                    if info['location'] not in self._fire_locations.values() and 'office ' + info['name'].split()[-1] not in self._fire_locations.keys():
+                        self._fire_locations['office ' + info['name'].split()[-1]] = info['location']
+
         # determine the categorical values for the fire source location
         if self._location == '?':
             self._location_cat = 'unknown'
@@ -760,7 +762,16 @@ class robot(custom_agent_brain):
                             self._doormat = state.get_room(self._victim_locations[vic]['room'])[-1]['doormat']
                             self._phase = Phase.PLAN_PATH_TO_ROOM
                         return Idle.__name__, {'action_duration': 0}
-                # if no goal victim has been found, pick an unsearched room to explore              
+                # determine the next fire to extinguish when the current deployment tactic is defensive
+                if self._tactic == 'defensive' and self._fire_locations:
+                    for office, loc in self._fire_locations.items():
+                        if loc not in self._extinguished_fire_locations and not any(info['room'] == office for info in self._victim_locations.values()):
+                            self._goal_location = loc
+                            self._door = state.get_room_doors(office)[0]
+                            self._doormat = state.get_room(office)[-1]['doormat']
+                            self._phase = Phase.PLAN_PATH_TO_ROOM
+                            return Idle.__name__, {'action_duration': 0} 
+                # if no goal victim or fire has been identified, pick an unsearched room to explore    
                 self._phase = Phase.PICK_UNSEARCHED_ROOM
 
             # phase to determine which unsearched room to explore
@@ -791,7 +802,7 @@ class robot(custom_agent_brain):
                         self._offensive_search_rounds += 1
                         self._send_message('Going to re-explore all offices to rescue victims.', self._name)
                     self._send_messages = []
-                    self._fire_locations = []
+                    self._fire_locations = {}
                     self.received_messages = []
                     self.received_messages_content = []
                     self._phase = Phase.FIND_NEXT_GOAL
@@ -832,8 +843,10 @@ class robot(custom_agent_brain):
                     self._send_message('Moving to ' + str(self._door['room_name']) + ' to search for victims because it is the closest not explored office.', self._name)     
                 if self._tactic == 'offensive' and self._goal_victim:
                     self._send_message('Moving to ' + str(self._door['room_name']) + ' to see if ' + self._goal_victim + ' can be rescued now.', self._name)  
-                if self._tactic == 'defensive':
-                    self._send_message('Moving to ' + str(self._door['room_name']) + ' to search for fire because it is the closest not explored office.', self._name)           
+                if self._tactic == 'defensive' and not self._goal_location:
+                    self._send_message('Moving to ' + str(self._door['room_name']) + ' to search for fire because it is the closest not explored office.', self._name)
+                if self._tactic == 'defensive' and self._goal_location:
+                    self._send_message('Moving to ' + str(self._door['room_name']) + ' to extinguish the fire.', self._name)     
                 self._current_door = self._door['location']
                 # execute the movement actions
                 action = self._navigator.get_move_action(self._state_tracker)
