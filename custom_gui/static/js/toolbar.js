@@ -454,8 +454,8 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("']",""); 
     mssg_content = mssg_content.replaceAll("\n","<br>");
     mssg_content = mssg_content.replaceAll("toxic", "<img src='/static/images/toxic.svg' height= 30 width=30/>");
-    mssg_content = mssg_content.replaceAll("Iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
-    mssg_content = mssg_content.replaceAll("iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
+    //mssg_content = mssg_content.replaceAll("Iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
+    //mssg_content = mssg_content.replaceAll("iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
     //mssg_content = mssg_content.replaceAll("fire fighter", "<img src='/static/images/rescue-man-final3.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("explosion", "<img src='/static/images/explosion-danger.svg' height= 30 width=30/>");
     //mssg_content = mssg_content.replaceAll("fire", "<img src='/static/images/fire2.svg' height= 30 width=30/>");
