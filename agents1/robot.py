@@ -748,6 +748,13 @@ class robot(custom_agent_brain):
                     self._total_victims_cat = 'unclear'
                 # send hidden message used for GUI/displaying the number of rescued victims
                 self._send_message('Victims rescued: ' + str(len(self._rescued_victims)) + '/' + str(self._total_victims) + '.', self._name)
+                # switch to defensive if all victims have been found but not rescued
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims):
+                    self._tactic = 'defensive'
+                    if self._total_victims - len(self._rescued_victims) == 1:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
+                    else:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victims that we found but could not rescue.', self._name)
                 # determine the next goal victim and location for a found victim
                 for vic in remaining_victims:
                     if vic in self._found_victims and vic not in self._lost_victims and self._tactic != 'defensive':
@@ -922,8 +929,9 @@ class robot(custom_agent_brain):
                                 self._room_victims.append(vic)
                             if 'healthy' not in vic:
                                 self._recent_victim = vic
-                                self._found_victims.append(vic)
-                                self._victim_locations[vic] = {'location': info['location'], 'room': self._door['room_name'], 'obj_id': info['obj_id']}
+                                if vic not in self._found_victims:
+                                    self._found_victims.append(vic)
+                                    self._victim_locations[vic] = {'location': info['location'], 'room': self._door['room_name'], 'obj_id': info['obj_id']}
                                 self._send_message('Found ' + vic + ' in ' + self._door['room_name'] + '.', self._name)
                                 if 'critical' in vic and not self._plot_generated:
                                     # determine which visual explanation to show when a critically injured victim is found
