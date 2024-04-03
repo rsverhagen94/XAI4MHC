@@ -76,13 +76,6 @@ class message_logger(GridWorldLogger):
                     if (i, mssg.content) not in processed_messages and 'Time left: ' not in mssg.content and 'Fire duration: ' not in mssg.content and 'Smoke spreads: ' not in mssg.content \
                         and 'Temperature: ' not in mssg.content and 'Location: ' not in mssg.content and 'Distance: ' not in mssg.content and 'Victims rescued: ' not in mssg.content and 'Counterbalancing' not in mssg.content:
                         processed_messages.append((i, mssg.content))
-                        #match = re.search(r'<b>(.*?)</b>', mssg.content)
-
-                        #if match:
-                        #    sensitivity = match.group(1)
-                        #    tot_allocations += 1
-                        #else:
-                        #    sensitivity = ''
 
                         if 'No intervention' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[6]) < 4.2:
                             CRR_ND_self += 1
