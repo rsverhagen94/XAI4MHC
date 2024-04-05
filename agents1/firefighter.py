@@ -92,20 +92,6 @@ class firefighter(custom_agent_brain):
                 len(self._extinguished_fires) / self._no_fires <= 0.4 and self._resistance > 20:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
-        if self._no_fires == 3:
-            # temperature higher if 0% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fires) / self._no_fires == 0 and self._resistance <= 20:
-                self._temperature = '>'
-                self._temperature_cat = 'higher'
-            # temperature lower if more than 64% extinguished
-            if len(self._extinguished_fires) / self._no_fires >= 0.65:
-                self._temperature = '<'
-                self._temperature_cat = 'lower'
-            # temperature close if less than 65% and more than 0% extinguished or 0% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fires) / self._no_fires < 0.65 and len(self._extinguished_fires) / self._no_fires > 0 or \
-                len(self._extinguished_fires) / self._no_fires == 0 and self._resistance > 20:
-                self._temperature = '<≈'
-                self._temperature_cat = 'close'
 
         while True:            
             if Phase.WAIT_FOR_CALL == self._phase:
@@ -194,7 +180,7 @@ class firefighter(custom_agent_brain):
                 self._phase = Phase.WAIT_FOR_CALL
                 self.agent_properties["img_name"] = "/images/rescue-man-final3.svg"
                 self.agent_properties["visualize_size"] = 1
-                self._send_message('Safely back outside the building with a resistance to collapse of ' + str(self._resistance) + ' minutes.', agent_name.replace('_', ' ').capitalize())
+                #self._send_message('Safely back outside the building with a resistance to collapse of ' + str(self._resistance) + ' minutes.', agent_name.replace('_', ' ').capitalize())
                 return IdleDisappear.__name__, {'action_duration': 0}
 
             if Phase.PLAN_PATH_TO_VICTIM == self._phase:
@@ -215,6 +201,7 @@ class firefighter(custom_agent_brain):
                     for info in state.values():
                         if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
                             self._goal_victim = info['img_name'][8:-4]
+                            self._send_message('Transporting ' + self._goal_victim + ' to the safe zone.', agent_name.replace('_', ' ').capitalize())
                             return CarryObject.__name__, {'object_id': info['obj_id']}
                 else:
                     for info in state.values():
@@ -240,7 +227,7 @@ class firefighter(custom_agent_brain):
 
             if Phase.DROP_VICTIM == self._phase:
                 self._rescued.append(self._goal_victim)
-                self._send_message('Delivered ' + self._goal_victim + ' at the drop zone.', agent_name.replace('_', ' ').capitalize())
+                self._send_message('Delivered ' + self._goal_victim + ' at the safe zone.', agent_name.replace('_', ' ').capitalize())
                 self._phase = Phase.WAIT_FOR_CALL
                 self._goal_victim = None
                 return Drop.__name__, {'action_duration':0}

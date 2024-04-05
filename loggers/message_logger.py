@@ -125,7 +125,7 @@ class message_logger(GridWorldLogger):
                             tot_allocations_robot += 1
                             sensitivity = float(mssg.content.split()[9])
 
-                        if 'Reallocating' in mssg.content and 'to you' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) < 3.5:
+                        if 'Reallocating' in mssg.content and 'to you' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) <= 3.5:
                             FR_ND_self += 1
                             decision = 'FR_ND_self'
                             tot_allocations_robot += 1
@@ -137,7 +137,7 @@ class message_logger(GridWorldLogger):
                             tot_allocations_human += 1
                             sensitivity = float(mssg.content.split()[9])
 
-                        if 'Reallocating' in mssg.content and 'to me' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) >= 3.5 and float(mssg.content.split()[9]) < 4.2:
+                        if 'Reallocating' in mssg.content and 'to me' in mssg.content and self._threshold == '3.5' and float(mssg.content.split()[9]) > 3.5 and float(mssg.content.split()[9]) < 4.2:
                             FR_ND_robot += 1
                             decision = 'FR_ND_robot'
                             tot_allocations_human += 1
