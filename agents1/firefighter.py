@@ -44,6 +44,7 @@ class firefighter(custom_agent_brain):
         self._rescued = []
         self._modulos = []
         self._goal_victim = None
+        self._decided = None
         self._location = '?'
 
     def initialize(self):
@@ -63,38 +64,34 @@ class firefighter(custom_agent_brain):
             self._extinguished_fires.append(self.received_messages_content[-1])
         agent_name = state[self.agent_id]['obj_id']
 
-        # determine temperature based on the number of fires in the building, fire resistance, and number of extinguished fires
-        if self._no_fires == 7:
-            # temperature higher if less than 46% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fires) / self._no_fires <= 0.45 and self._resistance <= 20:
+        if self._no_fires == 8:
+            if len(self._extinguished_fires) / self._no_fires < 0.75 and self._resistance <= 30:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
-            # temperature lower if more than 79% extinguished
-            if len(self._extinguished_fires) / self._no_fires >= 0.8:
+            if len(self._extinguished_fires) / self._no_fires >= 0.75 or self._resistance > 40:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
-            # temperature close if less than 80% and more than 45% extinguished or less than 45% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.45 or \
-                len(self._extinguished_fires) / self._no_fires <= 0.45 and self._resistance > 20:
+            if self._resistance > 30 and self._resistance <= 40 and len(self._extinguished_fires) / self._no_fires < 0.75 or \
+                len(self._extinguished_fires) / self._no_fires < 0.75 and len(self._extinguished_fires) / self._no_fires >= 0.25 and self._resistance <= 40:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
-        if self._no_fires == 5:
-            # temperature higher if less than 41% extinguished and fire resistance less than 21 minutes
-            if len(self._extinguished_fires) / self._no_fires <= 0.4 and self._resistance <= 20:
+        if self._no_fires == 10:
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and self._resistance <= 30:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
-            # temperature lower if more than 79% extinguished
             if len(self._extinguished_fires) / self._no_fires >= 0.8:
                 self._temperature = '<'
                 self._temperature_cat = 'lower'
-            # temperature close if less than 80% and more than 40% extinguished or less than 41% extinguished and fire resistance more than 20 minutes
-            if len(self._extinguished_fires) / self._no_fires < 0.8 and len(self._extinguished_fires) / self._no_fires > 0.4 or \
-                len(self._extinguished_fires) / self._no_fires <= 0.4 and self._resistance > 20:
+            if len(self._extinguished_fires) / self._no_fires < 0.8 and self._resistance > 30 or len(self._extinguished_fires) / self._no_fires >= 0.40:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
 
         while True:            
             if Phase.WAIT_FOR_CALL == self._phase:
+                if self.received_messages_content and 'Sending in' in self.received_messages_content[-1] and 'Not sending in' not in self.received_messages_content[-1] and 'because' in self.received_messages_content[-1]:
+                    self._decided = 'robot'
+                if self.received_messages_content and 'Sending in' in self.received_messages_content[-1] and 'Not sending in' not in self.received_messages_content[-1] and 'because' not in self.received_messages_content[-1]:
+                    self._decided = 'human'
                 if self.received_messages_content and 'Coordinates' in self.received_messages_content[-1] and self._goal_victim not in self._rescued and agent_name == 'fire_fighter_1':
                     msg = self.received_messages_content[-1]
                     self._drop_location = tuple((int(msg.split()[-3]), int(msg.split()[-1])))
@@ -112,13 +109,16 @@ class firefighter(custom_agent_brain):
                 self._navigator.reset_full()
                 if agent_name and agent_name == 'fire_fighter_2':
                     self._area_location = tuple((int(self._msg.split()[3]), int(self._msg.split()[5])))
+                    self._area = 'office ' + self._msg.split()[7]
                     self._navigator.add_waypoints([self._area_location])
                 if agent_name and agent_name == 'fire_fighter_3':
                     self._area_location = tuple((int(self._msg.split()[-5]), int(self._msg.split()[-3])))
+                    self._area = 'office ' + self._msg.split()[-1]
                     self._navigator.add_waypoints([self._area_location])
                 self._phase = Phase.FOLLOW_PATH_TO_ROOM
 
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
+                self._send_message('Moving to ' + self._area + ' to search for the fire source.', agent_name.replace('_', ' ').capitalize())
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
@@ -126,16 +126,12 @@ class firefighter(custom_agent_brain):
                 self._phase = Phase.PLAN_ROOM_SEARCH_PATH
 
             if Phase.PLAN_ROOM_SEARCH_PATH == self._phase:
-                if agent_name and agent_name == 'fire_fighter_2':
-                    self._area = 'office ' + self._msg.split()[7]
-                if agent_name and agent_name == 'fire_fighter_3':
-                    self._area = 'office ' + self._msg.split()[-1]
                 room_tiles = [info['location'] for info in state.values()
                     if 'class_inheritance' in info 
                     and 'AreaTile' in info['class_inheritance']
                     and 'room_name' in info
                     and info['room_name'] == self._area]
-                if self._resistance > 15 and self._temperature != '>':
+                if self._temperature != '>' or self._temperature == '>' and self._decided == 'robot':
                     self._room_tiles = room_tiles               
                     self._navigator.reset_full()
                     self._navigator.add_waypoints(room_tiles)
@@ -143,7 +139,7 @@ class firefighter(custom_agent_brain):
                 else:
                     self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for us to continue searching for the fire source.', agent_name.replace('_', ' ').capitalize())
                     self.agent_properties["img_name"] = "/images/human-danger2.gif"
-                    self.agent_properties["visualize_size"] = 2
+                    self.agent_properties["visualize_size"] = 2.0
                     self._phase = Phase.PLAN_EXIT
                     return Idle.__name__, {'action_duration': 0}
 
@@ -152,11 +148,11 @@ class firefighter(custom_agent_brain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:                   
                     for info in state.values():
-                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id']:
+                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._location != 'found':
                             self._send_message('Fire source located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
                             action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire source in ' + self._area)
-                            self._phase = Phase.PLAN_EXIT
+                            self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                             return AddObject.__name__, action_kwargs
                     return action, {}
                 self._phase = Phase.PLAN_EXIT
@@ -179,7 +175,7 @@ class firefighter(custom_agent_brain):
                     return action, {}
                 self._phase = Phase.WAIT_FOR_CALL
                 self.agent_properties["img_name"] = "/images/rescue-man-final3.svg"
-                self.agent_properties["visualize_size"] = 1
+                self.agent_properties["visualize_size"] = 1.0
                 #self._send_message('Safely back outside the building with a resistance to collapse of ' + str(self._resistance) + ' minutes.', agent_name.replace('_', ' ').capitalize())
                 return IdleDisappear.__name__, {'action_duration': 0}
 
@@ -196,7 +192,7 @@ class firefighter(custom_agent_brain):
                 self._phase = Phase.TAKE_VICTIM
 
             if Phase.TAKE_VICTIM == self._phase:
-                if self._resistance > 15 and self._temperature != '>':
+                if self._temperature != '>' or self._temperature == '>' and self._decided == 'robot':
                     self._phase = Phase.PLAN_PATH_TO_DROPPOINT
                     for info in state.values():
                         if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
@@ -209,7 +205,7 @@ class firefighter(custom_agent_brain):
                             self._goal_victim = info['img_name'][8:-4]
                     self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for me to continue rescuing ' + self._goal_victim + '.', agent_name.replace('_', ' ').capitalize())
                     self.agent_properties["img_name"] = "/images/human-danger2.gif"
-                    self.agent_properties["visualize_size"] = 2
+                    self.agent_properties["visualize_size"] = 2.0
                     self._phase = Phase.PLAN_EXIT
                     return Idle.__name__, {'action_duration': 0}
 
@@ -228,7 +224,7 @@ class firefighter(custom_agent_brain):
             if Phase.DROP_VICTIM == self._phase:
                 self._rescued.append(self._goal_victim)
                 self._send_message('Delivered ' + self._goal_victim + ' at the safe zone.', agent_name.replace('_', ' ').capitalize())
-                self._phase = Phase.WAIT_FOR_CALL
+                self._phase = Phase.PLAN_EXIT
                 self._goal_victim = None
                 return Drop.__name__, {'action_duration':0}
 

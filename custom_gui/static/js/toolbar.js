@@ -481,7 +481,9 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("critically injured dog", "<img src='/static/images/critically injured dog.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("critically injured cat", "<img src='/static/images/critically injured cat.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("critically injured elderly man ", "<img src='/static/images/critically injured elderly man.svg' height= 30 width=30/> ");
+    mssg_content = mssg_content.replaceAll("critically injured elderly man,", "<img src='/static/images/critically injured elderly man.svg' height= 30 width=30/>,");
     mssg_content = mssg_content.replaceAll("critically injured elderly man2", "<img src='/static/images/critically injured elderly man.svg' height= 30 width=30/>");
+    mssg_content = mssg_content.replaceAll("rescue critically injured elderly man.", "rescue <img src='/static/images/critically injured elderly man.svg' height= 30 width=30/>.");
     mssg_content = mssg_content.replaceAll("critically injured elderly woman", "<img src='/static/images/critically injured elderly woman.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("mildly injured girl", "<img src='/static/images/mildly injured girl.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("mildly injured boy", "<img src='/static/images/mildly injured boy.svg' height= 30 width=30/>");
