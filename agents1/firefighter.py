@@ -32,11 +32,10 @@ class Phase(enum.Enum):
 
 
 class firefighter(custom_agent_brain):
-    def __init__(self, name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition):
-        super().__init__(name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition)
+    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
+        super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
         self._phase = Phase.WAIT_FOR_CALL
         self._resistance = resistance
-        self._duration = duration
         self._time_left = resistance
         self._no_fires = no_fires
         self._extinguished_fires = []
@@ -56,7 +55,6 @@ class firefighter(custom_agent_brain):
         if int(self._second) % 6 == 0 and int(self._second) not in self._modulos:
             self._modulos.append(int(self._second))
             self._resistance -= 1
-            self._duration += 1
         return state
 
     def decide_on_bw4t_action(self, state: State):

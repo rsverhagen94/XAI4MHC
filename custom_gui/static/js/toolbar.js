@@ -541,21 +541,9 @@ function add_message(chatroom_ID, mssg) {
             document.getElementById('resistance').innerHTML = newTime;
     
             // Assuming you have an <h6> element with id="fireResistance"
-            document.getElementById('resistance').innerHTML = `<img src='/static/images/fire_resistance_transparent.svg' width=50/> ${text} min.`;
+            document.getElementById('resistance').innerHTML = `<img src='/static/images/fire_resistance_transparent.svg' width=50/> ${text} minutes`;
         }
         resistance();
-    }
-
-    if (mssg_content.includes("Fire duration:")) {
-        function duration() {
-            const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newTime = 'Fire duration: ' + text + ' minutes';
-            document.getElementById('duration').innerHTML = newTime;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
-            document.getElementById('duration').innerHTML = `<img src='/static/images/duration_transparent.svg' width=40/> ${text} min.`;
-        }
-        duration();
     }
 
     if (mssg_content.includes("Victims rescued:")) {
@@ -565,7 +553,7 @@ function add_message(chatroom_ID, mssg) {
             document.getElementById('victims').innerHTML = newVics;
     
             // Assuming you have an <h6> element with id="fireResistance"
-            document.getElementById('victims').innerHTML = `<img src='/static/images/victim_transparent.svg' width=25/> ${text}`;
+            document.getElementById('victims').innerHTML = `<img src='/static/images/victim_transparent.svg' width=25/> ${text} safe`;
         }
         victims();
     }
@@ -634,7 +622,7 @@ function add_message(chatroom_ID, mssg) {
     }
 
     // add the message text to the message div
-    if (!mssg_content.includes("Counterbalancing condition") && !mssg_content.includes("No intervention") && !mssg_content.includes("Time left:") && !mssg_content.includes("Fire duration:") && !mssg_content.includes("Victims rescued:") && !mssg_content.includes("Smoke spreads:") && !mssg_content.includes("Temperature:") && !mssg_content.includes("Distance:") && !mssg_content.includes("Location:") && !mssg_content.includes("Coordinates") && !mssg_content.includes("Target")) {
+    if (!mssg_content.includes("Counterbalancing condition") && !mssg_content.includes("No intervention") && !mssg_content.includes("Time left:") && !mssg_content.includes("Victims rescued:") && !mssg_content.includes("Smoke spreads:") && !mssg_content.includes("Temperature:") && !mssg_content.includes("Distance:") && !mssg_content.includes("Location:") && !mssg_content.includes("Coordinates") && !mssg_content.includes("Target")) {
     var content = document.createElement('span');
     content.className = "chat-content";
     content.innerHTML = mssg_content;

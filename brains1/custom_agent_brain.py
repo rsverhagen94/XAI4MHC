@@ -9,7 +9,7 @@ class custom_agent_brain(agent_brain, ABC):
     BW4T agents must implement decide_on_bw4t_action
     """
     
-    def __init__(self, name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition):
+    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
         '''
         @param slowdown an integer. Basically this sets action_duration
         field to the given slowdown. 1 implies normal speed
@@ -21,7 +21,6 @@ class custom_agent_brain(agent_brain, ABC):
         self.__name = name
         self.__condition = condition
         self.__resistance = resistance
-        self.__duration = duration
         self.__no_fires = no_fires
         self.__victims = victims
         self.__task = task
@@ -35,37 +34,6 @@ class custom_agent_brain(agent_brain, ABC):
         act,params = self.decide_on_bw4t_action(state)
         params['grab_range'] = 1
         params['max_objects'] = 1
-        #water_locs = []
-        #if state[{"name": "water"}]:
-        #    for water in state[{"name": "water"}]:
-        #        if water['location'] not in water_locs:
-        #            water_locs.append(water['location'])
-        # remove doormat from water_locs
-        #if state[{"name": "Brutus"}]['location'] in water_locs and state[{"name": "Brutus"}]['location'] not in [(3,5),(9,5),(15,5),(21,5),(3,6),(9,6),(15,6),(3,17),(9,17),(15,17),(3,18),(9,18),(15,18),(21,18)]:
-        #    params['action_duration'] = 13
-        #if act == 'RemoveObject' and 'iron' in params['object_id']:
-        #    if params['size'] == 0.75:
-        #        params['action_duration'] = 1
-        #    if params['size'] == 1:
-        #        params['action_duration'] = 1
-        #    if params['size'] == 1.25:
-        #        params['action_duration'] = 1
-        #if act == 'RemoveObjectTogether' and 'iron' in params['object_id']:
-        #    if params['size'] == 0.75:
-        #        params['action_duration'] = 50
-        #    if params['size'] == 1:
-        #        params['action_duration'] = 100
-        #    if params['size'] == 1.25:
-        #        params['action_duration'] = 200
-
-        #if act == 'RemoveObject' and 'iron' in params['object_id']:
-        #    params['action_duration'] = 10
-        #if act == 'RemoveObject' and 'fire' in params['object_id'] or act == 'RemoveObject' and 'source' in params['object_id']:
-        #    if params['size'] == 2:
-        #        params['action_duration'] = 10
-            #params['action_duration'] = 10
-        #if act == 'RemoveObject' and 'fire' in params['object_id'] and 'source' in params['object_id']:
-        #    params['action_duration'] = 0
 
         return act, params
     

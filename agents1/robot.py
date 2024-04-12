@@ -42,14 +42,13 @@ class Phase(enum.Enum):
     EXTINGUISH_CHECK = 19
 
 class robot(custom_agent_brain):
-    def __init__(self, name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition):
-        super().__init__(name, condition, resistance, duration, no_fires, victims, task, counterbalance_condition)
+    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
+        super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
         # initialize important variables
         self._phase=Phase.INTRO
         self._name = name
         self._condition = condition
         self._resistance = resistance
-        self._duration = duration
         self._time_left = resistance
         self._no_fires = no_fires
         self._victims = victims
@@ -106,11 +105,10 @@ class robot(custom_agent_brain):
     def filter_bw4t_observations(self, state):
         # calculate the number of seconds passed
         self._second = state['World']['tick_duration'] * state['World']['nr_ticks']
-        # if 6 seconds passed, resistance to collapse and fire duration increase with 1 minute
+        # if 6 seconds passed, resistance to collapse decreases with 1 minute
         if int(self._second) % 6 == 0 and int(self._second) not in self._modulos:
             self._modulos.append(int(self._second))
             self._resistance -= 1
-            self._duration += 1
             # keep track of the duration of deployment tactics
             if self._tactic == 'offensive':
                 self._offensive_deployment_time += 1
@@ -118,13 +116,12 @@ class robot(custom_agent_brain):
                 self._defensive_deployment_time += 1
         # send hidden messages used for GUI/display with icons
         self._send_message('Time left: ' + str(self._resistance) + '.', self._name)
-        self._send_message('Fire duration: ' + str(self._duration) + '.', self._name)
         return state
 
     def decide_on_bw4t_action(self, state:State):
         print(self._phase)
         self._current_location = state[self.agent_id]['location']
-
+        
         # determine the combination of robot name and allocation threshold depending on counterbalancing condition
         conservative_brutus = ['2', '4', '6', '8', '10', '12', '14', '16']
         radical_brutus = ['1', '3', '5', '7', '9', '11', '13', '15']
@@ -204,8 +201,12 @@ class robot(custom_agent_brain):
         if self._location == 'found':
             self._location_cat = 'known'
 
+        # reset distance feature to unknown once the robot leaves an office
+        if self._current_location not in self._room_tiles:
+            self._distance = '?'
+
         # keep track of the times at which visual explanations have been generated
-        if self._time_left - self._resistance not in self._plot_times: 
+        if self._time_left - self._resistance not in self._plot_times:
             self._plot_generated = False
 
         # determine temperature based on the number of fires in the building, fire resistance, and number of extinguished fires
@@ -295,25 +296,20 @@ class robot(custom_agent_brain):
                     return None, {}
 
             # determine at which times the switch tactics situations occur
-            if self._time_left - self._resistance >= 6 and self._time_left - self._resistance <= 11:
+            if self._time_left - self._resistance >= 6 and self._time_left - self._resistance <= 11 and 'switch 1' not in self._situations:
                 self._situation = 'switch 1'
-            #if self._time_left - self._resistance >= 16 and self._time_left - self._resistance <= 21 and (self._time_left - self._resistance) - self._time_passed_s1 >= 10:
-            #    self._time_passed_s2 = self._time_left - self._resistance
-            #    self._situation = 'switch 2'
-            if self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 31 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims:
+            if self._time_left - self._resistance >= 16 and self._time_left - self._resistance <= 21 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims and self._task == 4:
                 self._situation = 'switch 2'
-            if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims and self._task == 2:
+            if self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 31 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims and self._task != 4:
+                self._situation = 'switch 2'
+            if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims and self._task != 1 and self._task != 3:
                 self._situation = 'switch 3'
-            if self._time_left - self._resistance >= 46 and self._time_left - self._resistance <= 51 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims and self._task != 3:
+            if self._time_left - self._resistance >= 46 and self._time_left - self._resistance <= 51 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims and self._task != 3 and self._task != 4:
                 self._situation = 'switch 4'
-            #if self._time_left - self._resistance >= 56 and self._time_left - self._resistance <= 61 and self._task != 3 and self._task != 4 and (self._time_left - self._resistance) - self._time_passed_s4 >= 10 \
-            #    and 'switch 5' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._time_passed_s5 = self._time_left - self._resistance
-            #    self._situation = 'switch 5'
-            if self._time_left - self._resistance >= 56 and self._time_left - self._resistance <= 61 and 'switch 6' not in self._situations and len(self._found_victims) != self._total_victims and self._task == 2:
+            if self._time_left - self._resistance >= 56 and self._time_left - self._resistance <= 61 and 'switch 5' not in self._situations and len(self._found_victims) != self._total_victims and self._task == 2:
                 self._situation = 'switch 5'
             if self._time_left - self._resistance >= 66 and self._time_left - self._resistance <= 71 and 'switch 6' not in self._situations and len(self._found_victims) != self._total_victims and self._task != 2:
-                self._situation = 'switch 5'
+                self._situation = 'switch 6'
 
             # present the switch tactics situation once the robot leaves an office
             if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations:
@@ -533,10 +529,9 @@ class robot(custom_agent_brain):
                                 # send hidden message used for logging purposes
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
                             # decision making based on robot logic/firefighting guidelines
-                            if self._resistance < 5 and self._duration > 60:
+                            if self._resistance < 5:
                                 self._send_message('Switching to a defensive deployment after the offensive deployment of ' + str(self._offensive_deployment_time) + ' minutes, \
-                                                    because the fire duration is more than 60 minutes and the resistance to collapse is less than 5 minutes, \
-                                                    making the chance of saving people and the building too low.', self._name)
+                                                    because the resistance to collapse is less than 5 minutes, making the chance of saving people and the building too low.', self._name)
                                 self._plot_times.append(self._time_left - self._resistance)
                                 self._tactic = 'defensive'
                                 self._decide = None
@@ -573,10 +568,9 @@ class robot(custom_agent_brain):
                                 # send hidden message used for logging purposes
                                 self._send_message('No intervention for decision with sensitivity ' + str(self._sensitivity) + ' allocated to ' + self._decide + ' at time ' + str(self._time), self._name)
                             # decision making based on robot logic/firefighting guidelines
-                            if self._resistance < 5 and self._duration > 60:
+                            if self._resistance < 5:
                                 self._send_message('Continuing with the defensive deployment going on for ' + str(self._defensive_deployment_time) + ' minutes, \
-                                                    because the fire duration is more than 60 minutes and the resistance to collapse is less than 5 minutes, \
-                                                    making the chance of saving people and the building too low.', self._name)
+                                                    because the resistance to collapse is less than 5 minutes, making the chance of saving people and the building too low.', self._name)
                                 self._tactic = 'defensive'
                                 self._decide = None
                                 self._reallocated = False
@@ -600,10 +594,12 @@ class robot(custom_agent_brain):
             # if between 15 and 25 minutes the fire source has not been located, present situation 'send in fire fighters to locate fire source or not'
             #if self._time_left - self._resistance >= 15 and self._time_left - self._resistance <= 25 and self._location == '?' and not self._plot_generated and \
             #    self._current_location not in self._room_tiles and 'locate' not in self._situations:
-            if self._time_left - self._resistance > 36 and self._time_left - self._resistance <= 41 and self._location == '?' and not self._plot_generated and \
+            if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and self._location == '?' and not self._plot_generated and \
                 self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 1 or \
-               self._time_left - self._resistance > 16 and self._time_left - self._resistance <= 21 and self._location == '?' and not self._plot_generated and \
-                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task != 1:
+               self._time_left - self._resistance >= 16 and self._time_left - self._resistance <= 21 and self._location == '?' and not self._plot_generated and \
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task != 1 and self._task != 4 or \
+               self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 31 and self._location == '?' and not self._plot_generated and \
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 4:
                 self._situations.append('locate')
                 # determine the correct image name to show in the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
