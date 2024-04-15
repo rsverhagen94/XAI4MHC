@@ -43,7 +43,8 @@ def R_to_Py_plot_priority(people, smoke, location, image_name):
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
                 data_plot$rank[idx] <- 1
                 order_indices <- order(data_plot$rank)
-                data_plot$variable <- data_plot$variable[order_indices]
+                data_plot <- data_plot[order_indices, ]
+                data_plot$variable <- factor(data_plot$variable, levels = unique(data_plot$variable))
                 pl <- ggplot(data_plot, aes(x = variable, y = phi, fill = ifelse(data_plot$variable == "none", "#3E6F9F", ifelse(data_plot$phi >= 0, "#dc4c5d", "#117733")))) +
                 geom_bar(stat = "identity") +
                 geom_text(aes(label = ifelse(data_plot$variable=="none", phi, ifelse(data_plot$phi>=0, paste("+", phi, sep=""), paste("-", abs(phi)))),
@@ -130,7 +131,8 @@ def R_to_Py_plot_tactic(people, location, resistance, image_name):
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
                 data_plot$rank[idx] <- 1
                 order_indices <- order(data_plot$rank)
-                data_plot$variable <- data_plot$variable[order_indices]
+                data_plot <- data_plot[order_indices, ]
+                data_plot$variable <- factor(data_plot$variable, levels = unique(data_plot$variable))
                 pl <- ggplot(data_plot, aes(x = variable, y = phi, fill = ifelse(data_plot$variable == "none", "#3E6F9F", ifelse(data_plot$phi >= 0, "#dc4c5d", "#117733")))) +
                 geom_bar(stat = "identity") +
                 geom_text(aes(label = ifelse(data_plot$variable=="none", phi, ifelse(data_plot$phi>=0, paste("+", phi, sep=""), paste("-", abs(phi)))),
@@ -222,7 +224,8 @@ def R_to_Py_plot_locate(people, resistance, temperature, image_name):
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
                 data_plot$rank[idx] <- 1
                 order_indices <- order(data_plot$rank)
-                data_plot$variable <- data_plot$variable[order_indices]
+                data_plot <- data_plot[order_indices, ]
+                data_plot$variable <- factor(data_plot$variable, levels = unique(data_plot$variable))
                 pl <- ggplot(data_plot, aes(x = variable, y = phi, fill = ifelse(data_plot$variable == "none", "#3E6F9F", ifelse(data_plot$phi >= 0, "#dc4c5d", "#117733")))) +
                 geom_bar(stat = "identity") +
                 geom_text(aes(label = ifelse(data_plot$variable=="none", phi, ifelse(data_plot$phi>=0, paste("+", phi, sep=""), paste("-", abs(phi)))),
@@ -314,7 +317,8 @@ def R_to_Py_plot_rescue(resistance, temperature, distance, image_name):
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
                 data_plot$rank[idx] <- 1
                 order_indices <- order(data_plot$rank)
-                data_plot$variable <- data_plot$variable[order_indices]
+                data_plot <- data_plot[order_indices, ]
+                data_plot$variable <- factor(data_plot$variable, levels = unique(data_plot$variable))
                 pl <- ggplot(data_plot, aes(x = variable, y = phi, fill = ifelse(data_plot$variable == "none", "#3E6F9F", ifelse(data_plot$phi >= 0, "#dc4c5d", "#117733")))) +
                 geom_bar(stat = "identity") +
                 geom_text(aes(label = ifelse(data_plot$variable=="none", phi, ifelse(data_plot$phi>=0, paste("+", phi, sep=""), paste("-", abs(phi)))),

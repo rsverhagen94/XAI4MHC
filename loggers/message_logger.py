@@ -73,7 +73,7 @@ class message_logger(GridWorldLogger):
                         robot = mssg.content.split()[4]
                         self._threshold = mssg.content.split()[6]
                    
-                    if (i, mssg.content) not in processed_messages and 'Time left: ' not in mssg.content and 'Smoke spreads: ' not in mssg.content \
+                    if (i, mssg.content) not in processed_messages and 'Time left: ' not in mssg.content and 'Smoke spreads: ' not in mssg.content and 'Coordinates vic' not in mssg.content and 'Target' not in mssg.content \
                         and 'Temperature: ' not in mssg.content and 'Location: ' not in mssg.content and 'Distance: ' not in mssg.content and 'Victims rescued: ' not in mssg.content and 'Counterbalancing' not in mssg.content:
                         processed_messages.append((i, mssg.content))
 
