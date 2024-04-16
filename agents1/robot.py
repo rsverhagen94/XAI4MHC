@@ -45,7 +45,7 @@ class robot(custom_agent_brain):
     def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
         super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
         # initialize important variables
-        self._phase=Phase.INTRO
+        self._phase=Phase.FIND_NEXT_GOAL
         self._name = name
         self._condition = condition
         self._resistance = resistance
@@ -86,6 +86,7 @@ class robot(custom_agent_brain):
         self._decided = False
         self._waiting = False
         self._evacuating = False
+        self._started = False
         self._smoke = '?'
         self._location = '?'
         self._distance = '?'
@@ -139,10 +140,18 @@ class robot(custom_agent_brain):
         self._send_message('Counterbalancing condition ' + self._counterbalance_condition + ' name ' + self._name + ' threshold ' + str(self._threshold), self._name)
 
         # switch to offensive tactic when temperature is lower than threshold and people are found but not rescued
-        if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims:
+        if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and not self._waiting:
             self._send_message('Switching to an offensive deployment after the defensive deployment of ' + str(self._defensive_deployment_time) + ' minutes, \
                                 because the temperature is no longer higher than the safety threshold and there are still victims that we found but did not rescue.', self._name)
+            self._waiting = True
+            self._decided_time = int(self._second)
+        
+        if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and self._decided_time and int(self._second) < self._decided_time + 5:
+            return None, {}
+
+        if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and self._decided_time and int(self._second) >= self._decided_time + 5:
             self._tactic = 'offensive'
+            self._waiting = False
             self._offensive_search_rounds += 1
             self._lost_victims = []
             self._send_messages = []
@@ -246,13 +255,102 @@ class robot(custom_agent_brain):
 
         # infinite loop until task is completed
         while True:
-            # give short introduction message to participant
-            if Phase.INTRO == self._phase:
-                self._send_message('If you are ready to begin our mission, press the "Continue" button.', self._name)
-                if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
-                    self._phase = Phase.FIND_NEXT_GOAL
-                else:
+            # phase used to determine the next goal victim to rescue
+            if Phase.FIND_NEXT_GOAL == self._phase:
+                # reset some victim and obstacle variables
+                self._id = None
+                self._goal_victim = None
+                self._goal_location = None
+                zones = self._get_drop_zones(state)
+                remaining_zones = []
+                remaining_victims = []
+                remaining = {}
+                # determine which victims have been rescued and which ones still need to be rescued
+                for info in zones:
+                    if str(info['img_name'])[8:-4] not in self._rescued_victims:
+                        remaining_zones.append(info)
+                        remaining_victims.append(str(info['img_name'])[8:-4])
+                        remaining[str(info['img_name'])[8:-4]] = info['location']
+                if remaining_zones:
+                    self._remaining_zones = remaining_zones
+                    self._remaining = remaining
+                # remain idle if robot (thinks it) rescued all victims 
+                if not remaining_zones:
                     return None, {}
+                # determine victim category used for predicting moral sensitivity
+                if self._victims == 'known':
+                    self._total_victims = len(remaining_victims) + len(self._rescued_victims)
+                    if self._total_victims == 0:
+                        self._total_victims_cat = 'none'
+                    if self._total_victims == 1:
+                        self._total_victims_cat = 'one'
+                    if self._total_victims > 1:
+                        self._total_victims_cat = 'multiple'
+                if self._victims == 'unknown':
+                    self._total_victims = '?'
+                    self._total_victims_cat = 'unclear'
+                # switch to defensive if all offices have been searched and display total number of victims as it is no longer unknown
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting:
+                    self._total_victims = len(remaining_victims) + len(self._rescued_victims)
+                    if self._total_victims - len(self._rescued_victims) == 1:
+                        self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victim that we found but could not rescue.', self._name)
+                    else:
+                        self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victims that we found but could not rescue.', self._name)
+                    self._waiting = True
+                    self._decided_time = int(self._second)
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) < self._decided_time + 5:
+                    return None, {}
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) >= self._decided_time + 5:
+                    self._tactic = 'defensive'
+                    self._victims = 'known'
+                    self._waiting = False
+                # switch to defensive if all victims have been found but not rescued
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting:
+                    if self._total_victims - len(self._rescued_victims) == 1:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
+                    else:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victims that we found but could not rescue.', self._name)
+                    self._waiting = True
+                    self._decided_time = int(self._second)
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and self._decided_time and int(self._second) < self._decided_time + 5:
+                    return None, {}
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and self._decided_time and int(self._second) >= self._decided_time + 5:
+                    self._waiting = False
+                    self._tactic = 'defensive'
+                # send hidden message used for GUI/displaying the number of rescued victims
+                self._send_message('Victims rescued: ' + str(len(self._rescued_victims)) + '/' + str(self._total_victims) + '.', self._name)
+                # send intro message and wait for human response to start the task
+                if not self._started:
+                    self._send_message('If you are ready to begin the task, press the "Continue" button.', self._name)
+                if self.received_messages_content and self.received_messages_content[-1] != 'Continue' and not self._started or not self.received_messages_content and not self._started:
+                    return None, {}
+                if self.received_messages_content and self.received_messages_content[-1] == 'Continue' or self._started:
+                    self._started = True
+                    # determine the next goal victim and location for a found victim
+                    for vic in remaining_victims:
+                        if vic in self._found_victims and vic not in self._lost_victims and self._tactic != 'defensive':
+                            self._goal_victim = vic
+                            self._goal_location = remaining[vic]
+                            # directly move to a mildly injured victim to evacuate it
+                            if 'mild' in self._goal_victim:
+                                self._phase = Phase.PLAN_PATH_TO_VICTIM
+                            # move to the area of a critically injured victim to decide again if he/she can be rescued
+                            if 'critical' in self._goal_victim:
+                                self._door = state.get_room_doors(self._victim_locations[vic]['room'])[0]
+                                self._doormat = state.get_room(self._victim_locations[vic]['room'])[-1]['doormat']
+                                self._phase = Phase.PLAN_PATH_TO_ROOM
+                            return Idle.__name__, {'action_duration': 0}
+                    # determine the next fire to extinguish when the current deployment tactic is defensive
+                    if self._tactic == 'defensive' and self._fire_locations:
+                        for office, loc in sorted(self._fire_locations.items(), key=lambda x: int(x[0].split()[1])):
+                            if loc not in self._extinguished_fire_locations and not any(info['room'] == office for info in self._victim_locations.values()):
+                                self._goal_location = loc
+                                self._door = state.get_room_doors(office)[0]
+                                self._doormat = state.get_room(office)[-1]['doormat']
+                                self._phase = Phase.PLAN_PATH_TO_ROOM
+                                return Idle.__name__, {'action_duration': 0} 
+                    # if no goal victim or fire has been identified, pick an unsearched room to explore    
+                    self._phase = Phase.PICK_UNSEARCHED_ROOM
 
             # check if found fire should be extinguished and if yes, extinguish the fire
             if Phase.EXTINGUISH_CHECK == self._phase:
@@ -312,7 +410,7 @@ class robot(custom_agent_brain):
                 self._situation = 'switch 6'
 
             # present the switch tactics situation once the robot leaves an office
-            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations:
+            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting:
                 self._situations.append(self._situation)
                 # determine the image name of the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
@@ -434,6 +532,7 @@ class robot(custom_agent_brain):
             # decision making phase for the situation continue or switch deployment tactic
             if Phase.TACTIC == self._phase:
                 if self._decide == 'human' and self._tactic == 'offensive':
+                    self._waiting = True
                     # reallocate decision making to the robot if the human decides so
                     if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
                         or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] \
@@ -441,6 +540,7 @@ class robot(custom_agent_brain):
                         self._send_message('Reallocating the decision with a predicted moral sensitivity of ' + str(self._sensitivity) + ' to me because you intervened. \
                                             You have now intervened ' + str(self._interventions) + ' times.', self._name)
                         self._reallocated = True
+                        self._waiting = False
                         self._interventions += 1
                         self._decide = self._name
                     else:
@@ -458,12 +558,14 @@ class robot(custom_agent_brain):
                                 self._tactic = 'offensive'
                                 self._decide = None
                                 self._reallocated = False
+                                self._waiting = False
                                 self._phase = self._last_phase
                             if self.received_messages_content and self.received_messages_content[-1] == 'Switch':
                                 self._send_message('Switching to a defensive deployment after the offensive deployment of ' + str(self._deploy_time) + ' minutes.', self._name)
                                 self._tactic = 'defensive'
                                 self._decide = None
                                 self._reallocated = False
+                                self._waiting = False
                                 if self._evacuating:
                                     self._phase = self._last_phase
                                 if not self._evacuating:
@@ -474,7 +576,8 @@ class robot(custom_agent_brain):
                         else:
                             return None, {}
                 
-                if self._decide == 'human' and self._tactic == 'defensive' :
+                if self._decide == 'human' and self._tactic == 'defensive':
+                    self._waiting = True
                     # reallocte decision making to robot if human decides so
                     if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
                         or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] \
@@ -482,6 +585,7 @@ class robot(custom_agent_brain):
                         self._send_message('Reallocating the decision with a predicted moral sensitivity of ' + str(self._sensitivity) + ' to me because you intervened. \
                                             You have now intervened ' + str(self._interventions) + ' times.', self._name)
                         self._reallocated = True
+                        self._waiting = False
                         self._interventions += 1
                         self._decide = self._name
                     else:
@@ -498,6 +602,7 @@ class robot(custom_agent_brain):
                                 self._send_message('Continuing with the defensive deployment that has been going on for ' + str(self._deploy_time) + ' minutes.', self._name)
                                 self._tactic = 'defensive'
                                 self._decide = None
+                                self._waiting = False
                                 self._reallocated = False
                                 self._phase = self._last_phase
                             if self.received_messages_content and self.received_messages_content[-1] == 'Switch':
@@ -505,6 +610,7 @@ class robot(custom_agent_brain):
                                 self._offensive_search_rounds += 1
                                 self._tactic = 'offensive'
                                 self._decide = None
+                                self._waiting = False
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
                             else:
@@ -595,11 +701,11 @@ class robot(custom_agent_brain):
             #if self._time_left - self._resistance >= 15 and self._time_left - self._resistance <= 25 and self._location == '?' and not self._plot_generated and \
             #    self._current_location not in self._room_tiles and 'locate' not in self._situations:
             if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and self._location == '?' and not self._plot_generated and \
-                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 1 or \
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 1 and not self._waiting or \
                self._time_left - self._resistance >= 16 and self._time_left - self._resistance <= 21 and self._location == '?' and not self._plot_generated and \
-                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task != 1 and self._task != 4 or \
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task != 1 and self._task != 4 and not self._waiting or \
                self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 31 and self._location == '?' and not self._plot_generated and \
-                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 4:
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 4 and not self._waiting:
                 self._situations.append('locate')
                 # determine the correct image name to show in the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
@@ -665,12 +771,14 @@ class robot(custom_agent_brain):
             # decision making phase for the situation send in fire fighters to locate fire source or not
             if Phase.LOCATE == self._phase:
                 if self._decide == 'human':
+                    self._waiting = True
                     # reallocate decision making to robot if human decides so
                     if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
                         or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 15:
                         self._send_message('Reallocating the decision with a predicted moral sensitivity of ' + str(self._sensitivity) + ' to me because you intervened. \
                                             You have now intervened ' + str(self._interventions) + ' times.', self._name)
                         self._reallocated = True
+                        self._waiting = False
                         self._interventions += 1
                         self._decide = self._name
                     else:
@@ -684,8 +792,10 @@ class robot(custom_agent_brain):
                             if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                                 self._send_message('Not sending in fire fighters to help locate the fire source.', self._name)
                                 self._reallocated = False
+                                self._waiting = False
                                 self._phase = self._last_phase
                             if self.received_messages_content and self.received_messages_content[-1] == 'Fire fighter':
+                                self._waiting = False
                                 self._send_message('Sending in fire fighters to help locate the fire source.', self._name)
                                 # send hidden message with potential fire source locations based on detected smoke, used by firefighters to navigate towards
                                 self._send_message('Target 1 is ' + str(self._potential_source_offices[0][0]) + ' and ' + str(self._potential_source_offices[0][1]) + ' in ' \
@@ -745,84 +855,6 @@ class robot(custom_agent_brain):
                 # remain idle during any unforeseen situations to ensure the game does not get stuck
                 else:
                     return None, {}
-            
-            # phase used to determine the next goal victim to rescue
-            if Phase.FIND_NEXT_GOAL == self._phase:
-                # reset some victim and obstacle variables
-                self._id = None
-                self._goal_victim = None
-                self._goal_location = None
-                zones = self._get_drop_zones(state)
-                remaining_zones = []
-                remaining_victims = []
-                remaining = {}
-                # determine which victims have been rescued and which ones still need to be rescued
-                for info in zones:
-                    if str(info['img_name'])[8:-4] not in self._rescued_victims:
-                        remaining_zones.append(info)
-                        remaining_victims.append(str(info['img_name'])[8:-4])
-                        remaining[str(info['img_name'])[8:-4]] = info['location']
-                if remaining_zones:
-                    self._remaining_zones = remaining_zones
-                    self._remaining = remaining
-                # remain idle if robot (thinks it) rescued all victims 
-                if not remaining_zones:
-                    return None, {}
-                # determine victim category used for predicting moral sensitivity
-                if self._victims == 'known':
-                    self._total_victims = len(remaining_victims) + len(self._rescued_victims)
-                    if self._total_victims == 0:
-                        self._total_victims_cat = 'none'
-                    if self._total_victims == 1:
-                        self._total_victims_cat = 'one'
-                    if self._total_victims > 1:
-                        self._total_victims_cat = 'multiple'
-                if self._victims == 'unknown':
-                    self._total_victims = '?'
-                    self._total_victims_cat = 'unclear'
-                # switch to defensive if all offices have been searched and display total number of victims as it is no longer unknown
-                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14:
-                    self._tactic = 'defensive'
-                    self._victims = 'known'
-                    self._total_victims = len(remaining_victims) + len(self._rescued_victims)
-                    if self._total_victims - len(self._rescued_victims) == 1:
-                        self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victim that we found but could not rescue.', self._name)
-                    else:
-                        self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victims that we found but could not rescue.', self._name)
-                # switch to defensive if all victims have been found but not rescued
-                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating:
-                    self._tactic = 'defensive'
-                    if self._total_victims - len(self._rescued_victims) == 1:
-                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
-                    else:
-                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victims that we found but could not rescue.', self._name)
-                # send hidden message used for GUI/displaying the number of rescued victims
-                self._send_message('Victims rescued: ' + str(len(self._rescued_victims)) + '/' + str(self._total_victims) + '.', self._name)
-                # determine the next goal victim and location for a found victim
-                for vic in remaining_victims:
-                    if vic in self._found_victims and vic not in self._lost_victims and self._tactic != 'defensive':
-                        self._goal_victim = vic
-                        self._goal_location = remaining[vic]
-                        # directly move to a mildly injured victim to evacuate it
-                        if 'mild' in self._goal_victim:
-                            self._phase = Phase.PLAN_PATH_TO_VICTIM
-                        # move to the area of a critically injured victim to decide again if he/she can be rescued
-                        if 'critical' in self._goal_victim:
-                            self._door = state.get_room_doors(self._victim_locations[vic]['room'])[0]
-                            self._doormat = state.get_room(self._victim_locations[vic]['room'])[-1]['doormat']
-                            self._phase = Phase.PLAN_PATH_TO_ROOM
-                        return Idle.__name__, {'action_duration': 0}
-                # determine the next fire to extinguish when the current deployment tactic is defensive
-                if self._tactic == 'defensive' and self._fire_locations:
-                    for office, loc in sorted(self._fire_locations.items(), key=lambda x: int(x[0].split()[1])):
-                        if loc not in self._extinguished_fire_locations and not any(info['room'] == office for info in self._victim_locations.values()):
-                            self._goal_location = loc
-                            self._door = state.get_room_doors(office)[0]
-                            self._doormat = state.get_room(office)[-1]['doormat']
-                            self._phase = Phase.PLAN_PATH_TO_ROOM
-                            return Idle.__name__, {'action_duration': 0} 
-                # if no goal victim or fire has been identified, pick an unsearched room to explore    
-                self._phase = Phase.PICK_UNSEARCHED_ROOM
 
             # phase to determine which unsearched room to explore
             if Phase.PICK_UNSEARCHED_ROOM == self._phase:
