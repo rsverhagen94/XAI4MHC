@@ -31,7 +31,7 @@ class Phase(enum.Enum):
     FOLLOW_EXIT_PATH = 13
 
 
-class firefighter(custom_agent_brain):
+class tutorial_firefighter(custom_agent_brain):
     def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
         super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
         self._phase = Phase.WAIT_FOR_CALL
@@ -62,27 +62,15 @@ class firefighter(custom_agent_brain):
             self._extinguished_fires.append(self.received_messages_content[-1])
         agent_name = state[self.agent_id]['obj_id']
 
-        if self._no_fires == 8:
-            if len(self._extinguished_fires) / self._no_fires < 0.75 and self._resistance <= 30:
-                self._temperature = '>'
-                self._temperature_cat = 'higher'
-            if len(self._extinguished_fires) / self._no_fires >= 0.75 or self._resistance > 40:
-                self._temperature = '<'
-                self._temperature_cat = 'lower'
-            if self._resistance > 30 and self._resistance <= 40 and len(self._extinguished_fires) / self._no_fires < 0.75 or \
-                len(self._extinguished_fires) / self._no_fires < 0.75 and len(self._extinguished_fires) / self._no_fires >= 0.25 and self._resistance <= 40:
-                self._temperature = '<≈'
-                self._temperature_cat = 'close'
-        if self._no_fires == 10:
-            if len(self._extinguished_fires) / self._no_fires < 0.8 and self._resistance <= 30:
-                self._temperature = '>'
-                self._temperature_cat = 'higher'
-            if len(self._extinguished_fires) / self._no_fires >= 0.8:
-                self._temperature = '<'
-                self._temperature_cat = 'lower'
-            if len(self._extinguished_fires) / self._no_fires < 0.8 and self._resistance > 30 or len(self._extinguished_fires) / self._no_fires >= 0.40:
-                self._temperature = '<≈'
-                self._temperature_cat = 'close'
+        if len(self._extinguished_fires) / self._no_fires < 0.65:
+            self._temperature = '>'
+            self._temperature_cat = 'higher'
+        if len(self._extinguished_fires) / self._no_fires == 1:
+            self._temperature = '<'
+            self._temperature_cat = 'lower'
+        if len(self._extinguished_fires) / self._no_fires >= 0.65 and len(self._extinguished_fires) / self._no_fires < 1:
+            self._temperature = '<≈'
+            self._temperature_cat = 'close'
 
         while True:            
             if Phase.WAIT_FOR_CALL == self._phase:
@@ -109,10 +97,6 @@ class firefighter(custom_agent_brain):
                     self._area_location = tuple((int(self._msg.split()[3]), int(self._msg.split()[5])))
                     self._area = 'office ' + self._msg.split()[7]
                     self._navigator.add_waypoints([self._area_location])
-                if agent_name and agent_name == 'fire_fighter_3':
-                    self._area_location = tuple((int(self._msg.split()[-5]), int(self._msg.split()[-3])))
-                    self._area = 'office ' + self._msg.split()[-1]
-                    self._navigator.add_waypoints([self._area_location])
                 self._phase = Phase.FOLLOW_PATH_TO_ROOM
 
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
@@ -135,7 +119,7 @@ class firefighter(custom_agent_brain):
                     self._navigator.add_waypoints(room_tiles)
                     self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                 else:
-                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for us to continue searching for the fire source.', agent_name.replace('_', ' ').capitalize())
+                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for me to continue searching for the fire source in ' + self._area + '.', agent_name.replace('_', ' ').capitalize())
                     self.agent_properties["img_name"] = "/images/human-danger2.gif"
                     self.agent_properties["visualize_size"] = 2.0
                     self._phase = Phase.PLAN_EXIT
@@ -164,11 +148,9 @@ class firefighter(custom_agent_brain):
             if Phase.PLAN_EXIT == self._phase:
                 self._navigator.reset_full()
                 if agent_name and agent_name == 'fire_fighter_2':
-                    loc = (0, 11)
+                    loc = (0, 5)
                 if agent_name and agent_name == 'fire_fighter_1':
-                    loc = (0, 12)
-                if agent_name and agent_name == 'fire_fighter_3':
-                    loc = (0, 13)
+                    loc = (0, 7)
                 self._navigator.add_waypoints([loc])
                 self._phase = Phase.FOLLOW_EXIT_PATH
 

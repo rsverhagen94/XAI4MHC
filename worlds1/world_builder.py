@@ -103,6 +103,50 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
         builder = WorldBuilder(shape = [19,19], tick_duration = 0.5, run_matrx_api = True, random_seed = random_seed, 
                                run_matrx_visualizer = False, verbose = False, simulation_goal =goal , visualization_bg_clr = '#9a9083')
 
+    if exp_version == "trial":
+        resistance = 90
+        no_fires = 3
+        victims = 'known'
+
+        goal = CollectionGoal(max_nr_ticks=10000000000)
+        builder = WorldBuilder(shape = [13,13], tick_duration = 0.5, run_matrx_api = True, random_seed = random_seed, 
+                               run_matrx_visualizer = False, verbose = False, simulation_goal =goal , visualization_bg_clr = "#e5ddd5")
+        builder.add_room(top_left_location = (0, 0), width = 5, height = 4, name = 'office 1', door_locations = [(2,3)], 
+                         doors_open = True, door_visualization_opacity = 0, wall_visualize_colour = "#8a8a8a", with_area_tiles = True, 
+                         area_visualize_colour = '#0008ff', area_visualize_opacity = 0.0, door_open_colour = '#e5ddd5', area_custom_properties = {'doormat': (2,4)})
+        builder.add_room(top_left_location = (6,0), width = 5, height = 4, name = 'office 2', door_locations = [(8,3)], 
+                         doors_open = True, door_visualization_opacity = 0, wall_visualize_colour = "#8a8a8a", with_area_tiles = True, 
+                         area_visualize_colour = '#0008ff', area_visualize_opacity = 0.0, door_open_colour = '#e5ddd5', area_custom_properties = {'doormat': (8,4)})
+        builder.add_room(top_left_location = (0,9), width = 5, height = 4, name = 'office 3', door_locations = [(2,9)], 
+                         doors_open = True, door_visualization_opacity = 0, wall_visualize_colour = "#8a8a8a", with_area_tiles = True, 
+                         area_visualize_colour = '#0008ff', area_visualize_opacity = 0.0, door_open_colour = '#e5ddd5', area_custom_properties = {'doormat': (2,8)})
+        builder.add_room(top_left_location = (6,9), width = 5, height = 4, name = 'office 4', door_locations = [(8,9)], 
+                         doors_open = True, door_visualization_opacity = 0, wall_visualize_colour = "#8a8a8a", with_area_tiles = True, 
+                         area_visualize_colour = '#0008ff', area_visualize_opacity = 0.0, door_open_colour = '#e5ddd5', area_custom_properties = {'doormat': (8,8)})
+        builder.add_object(location = [2,0], is_traversable = True, is_movable = False, name = "area 01 sign", img_name = "/images/sign01.svg", visualize_depth = 110, visualize_size = 0.5)
+        builder.add_object(location = [8,0], is_traversable = True, is_movable = False, name = "area 02 sign", img_name = "/images/sign02.svg", visualize_depth = 110, visualize_size = 0.55)
+        builder.add_object(location = [2,12], is_traversable = True, is_movable = False, name = "area 03 sign", img_name = "/images/sign03.svg", visualize_depth = 110, visualize_size = 0.55)
+        builder.add_object(location = [8,12], is_traversable = True, is_movable = False, name = "area 04 sign", img_name = "/images/sign04.svg", visualize_depth = 110, visualize_size = 0.55)
+        for loc in [(0,0), (0,1), (0,2), (0,3), (1,3), (3,3), (4,3), (4,2), (4,1), (4,0), (3,0), (2,0), (1,0),
+                    (6,0), (6,1), (6,2), (6,3), (7,3), (9,3), (10,3), (10,2), (10,1), (10,0), (9,0), (8,0), (7,0),
+                    (0,9), (0,10), (0,11), (0,12), (1,12), (2,12), (3,12), (4,12), (4,11), (4,10), (4,9), (3,9), (1,9),
+                    (6,9), (6,10), (6,11), (6,12), (7,12), (8,12), (9,12), (10,12), (10,11), (10,10), (10,9), (9,9), (7,9)]:
+            builder.add_object(loc, 'roof', EnvObject, is_traversable = True, is_movable = False, visualize_shape = 'img', img_name = "/images/wall6.png")        
+        
+        builder.add_object((3,11), 'critically injured woman in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg")
+        builder.add_object((2,1), 'mildly injured elderly woman in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman.svg")
+        builder.add_object((3,1), 'mildly injured man in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg")
+        builder.add_object((12,5), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+        builder.add_object((12,6), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+        builder.add_object((12,7), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+        builder.add_object((8,2), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
+        builder.add_object((2,9), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
+        builder.add_object((3,2), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'normal', is_traversable = True, is_movable = True)
+        builder.add_object((8,10), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
+        builder.add_object(location = (8,9), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
+        for i in [(8,8), (7,8), (6,8), (9,8), (9,7), (9,6), (8,7), (8,6), (7,7), (7,6), (6,7), (6,6), (10,8), (10,7), (10,6)]:
+            builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
+
     # Create the goal
     if exp_version == "experiment":
         goal = CollectionGoal(max_nr_ticks=time)
@@ -209,7 +253,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             builder.add_object((9,15), 'mildly injured man in area 9', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg")
             builder.add_object((24,1), 'mildly injured elderly woman in area 4', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman.svg")
             builder.add_object((17,1), 'mildly injured woman in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg")
-            builder.add_object((9,8), 'source', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
+            builder.add_object((9,8), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
             builder.add_object(location = (9,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(9,6), (8,6), (7,6), (10,6), (10,5), (10,4), (9,5), (9,4), (8,5), (8,4), (7,5), (7,4), (11,6), (11,5), (11,4)]:
                 builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
@@ -269,7 +313,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             builder.add_object(location = (2,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(2,6), (1,6), (0,6), (3,6), (3,5), (3,4), (2,5), (2,4), (1,5), (1,4), (0,5), (0,4), (4,6), (4,5), (4,4)]:
                 builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
-            builder.add_object((9,8), 'source', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
+            builder.add_object((9,8), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
             builder.add_object(location = (9,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(9,6), (8,6), (7,6), (10,6), (10,5), (10,4), (9,5), (9,4), (8,5), (8,4), (7,5), (7,4), (11,6), (11,5), (11,4)]:
                 builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
@@ -305,7 +349,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             builder.add_object((25,13), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
             builder.add_object((25,14), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
             builder.add_object((25,15), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((9,22), 'source', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
+            builder.add_object((9,22), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
             builder.add_object(location = (9,21), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(9,19), (8,19), (7,19), (10,19), (10,18), (10,20), (9,18), (9,20), (8,18), (8,20), (7,18), (7,20), (11,19), (11,18), (11,20)]:
                 builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
@@ -358,7 +402,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             #builder.add_object((16,1), 'mildly injured man in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man2.svg")
             builder.add_object((9,22), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
             builder.add_object((10,8), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'normal', is_traversable = True, is_movable = True)
-            builder.add_object((2,22), 'source', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
+            builder.add_object((2,22), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'normal', is_traversable = True, is_movable = True)
             builder.add_object(location = (2,21), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(2,19), (1,19), (0,19), (3,19), (3,18), (3,20), (2,18), (2,20), (1,18), (1,20), (0,18), (0,20), (4,19), (4,18), (4,20)]:
                 builder.add_object(location = i, name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
