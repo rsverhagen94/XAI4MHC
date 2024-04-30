@@ -68,6 +68,7 @@ class robot(custom_agent_brain):
         self._situations = []
         self._plot_times = []
         self._potential_source_offices = []
+        self._processed_messages = []
         self._victim_locations = {}
         self._office_doors = {(2, 3): '1', (9, 3): '2', (16, 3): '3', (23, 3): '4', (2, 7): '5', (9, 7): '6', (16, 7): '7', 
                               (2, 17): '8', (9, 17): '9', (16, 17): '10', (2, 21): '11', (9, 21): '12', (16, 21): '13', (23, 21): '14'}
@@ -120,6 +121,7 @@ class robot(custom_agent_brain):
 
     def decide_on_bw4t_action(self, state:State):
         print(self._phase)
+        print(self._searched_rooms_defensive)
         self._current_location = state[self.agent_id]['location']
         
         # determine the combination of robot name and allocation threshold depending on counterbalancing condition
@@ -201,12 +203,16 @@ class robot(custom_agent_brain):
         # check which offices fire fighters explored and add to memory
         if self.received_messages_content:
             for msg in self.received_messages_content:
-                if 'Moving to' in msg and 'to search for the fire source' in msg:
+                if 'Moving to' in msg and 'to search for the fire source' in msg and msg not in self._processed_messages:
                     office = 'office ' + msg.split()[3]
                     if office not in self._searched_rooms_offensive:
                         self._searched_rooms_offensive.append(office)
-                if 'ABORTING' in msg and 'to continue searching for the fire source' in msg:
-                    self._searched_rooms_offensive.remove(msg.strip('.').split()[-2] + ' ' + msg.strip('.').split()[-1])
+                        self._processed_messages.append(msg)
+            
+        if self.received_messages_content and 'ABORTING' in self.received_messages_content[-1] and 'ABORTING' in self.received_messages_content[-2]:
+            self._searched_rooms_offensive.remove(self.received_messages_content[-1].strip('.').split()[-2] + ' ' + self.received_messages_content[-1].strip('.').split()[-1])
+            self._searched_rooms_offensive.remove(self.received_messages_content[-2].strip('.').split()[-2] + ' ' + self.received_messages_content[-2].strip('.').split()[-1])
+            self.received_messages_content = [msg for msg in self.received_messages_content if 'ABORTING' not in msg]
 
         # determine the categorical values for the fire source location
         if self._location == '?':
@@ -234,7 +240,7 @@ class robot(custom_agent_brain):
                 self._temperature_cat = 'lower'
             # temperature close if less than 75% and more than 24% extinguished and resistance less than 45 minutes or less than 75% extinguished and resistance between 36 and 45 minutes
             if self._resistance > 30 and self._resistance <= 40 and len(self._extinguished_fire_locations) / self._no_fires < 0.75 or \
-                len(self._extinguished_fire_locations) / self._no_fires < 0.75 and len(self._extinguished_fire_locations) / self._no_fires >= 0.25 and self._resistance <= 40:
+                len(self._extinguished_fire_locations) / self._no_fires < 0.75 and len(self._extinguished_fire_locations) / self._no_fires > 0.25 and self._resistance <= 40:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
         if self._no_fires == 10:
@@ -402,7 +408,8 @@ class robot(custom_agent_brain):
                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                 # remove object/extinguish fire after 5 seconds
                 if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
-                    self._searched_rooms_defensive.append(self._current_room)
+                    if self._current_room not in self._searched_rooms_defensive:
+                        self._searched_rooms_defensive.append(self._current_room)
                     self._waiting = False
                     # keep track of which fires are extinguished
                     if self._fire_location not in self._extinguished_fire_locations:
@@ -898,11 +905,6 @@ class robot(custom_agent_brain):
                     and room['room_name'] not in self._searched_rooms_defensive]
                 # reset some variables and start re-searching if all rooms have been explored
                 if self._remaining_zones and len(unsearched_rooms) == 0:
-                    if self._tactic == 'defensive':
-                        self._searched_rooms_defensive = []
-                        if self._door['room_name'] not in self._searched_rooms_defensive:
-                            self._searched_rooms_defensive.append(self._door['room_name'])
-                        self._send_message('Going to re-explore all offices to extinguish fires.', self._name)
                     if self._tactic == 'offensive':
                         self._searched_rooms_offensive = []
                         self._lost_victims = []
@@ -910,6 +912,12 @@ class robot(custom_agent_brain):
                             self._searched_rooms_offensive.append(self._door['room_name'])
                         self._offensive_search_rounds += 1
                         self._send_message('Going to re-explore all offices to rescue victims.', self._name)
+                    if self._tactic == 'defensive':
+                        self._searched_rooms_defensive = []
+                        if self._door['room_name'] not in self._searched_rooms_defensive:
+                            self._searched_rooms_defensive.append(self._door['room_name'])
+                        self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
+                        self._tactic = 'offensive'
                     self._send_messages = []
                     self._fire_locations = {}
                     self.received_messages = []
@@ -1208,6 +1216,7 @@ class robot(custom_agent_brain):
                 # keep track of which rooms have been explored during each deployment tactic
                 if self._tactic == 'offensive' and self._door['room_name'] not in self._searched_rooms_offensive:
                     self._searched_rooms_offensive.append(self._door['room_name'])
+                if self._tactic == 'offensive' and self._door['room_name'] not in self._searched_rooms_defensive:
                     self._searched_rooms_defensive.append(self._door['room_name'])
                 if self._tactic == 'defensive' and self._door['room_name'] not in self._searched_rooms_defensive:
                     self._searched_rooms_defensive.append(self._door['room_name'])
@@ -1246,6 +1255,7 @@ class robot(custom_agent_brain):
                                 self._send_message('Coordinates vic ' + vic_x + ' and ' + vic_y + ' coordinates drop ' + drop_x + ' and ' + drop_y, self._name)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 # remain idle until fire fighter has rescued victim
                                 return None, {}
@@ -1254,6 +1264,7 @@ class robot(custom_agent_brain):
                                 self._rescued_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
@@ -1265,6 +1276,7 @@ class robot(custom_agent_brain):
                                 self._lost_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
@@ -1275,6 +1287,7 @@ class robot(custom_agent_brain):
                                 self._lost_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
@@ -1312,6 +1325,7 @@ class robot(custom_agent_brain):
                                 self._send_message('Coordinates vic ' + vic_x + ' and ' + vic_y + ' coordinates drop ' + drop_x + ' and ' + drop_y, self._name)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 # remain idle until firefighter rescued victim
                                 return None, {}
@@ -1329,6 +1343,7 @@ class robot(custom_agent_brain):
                                 self._lost_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
@@ -1339,6 +1354,7 @@ class robot(custom_agent_brain):
                                 self._lost_victims.append(self._recent_victim)
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
+                                if self._door['room_name'] not in self._searched_rooms_defensive:
                                     self._searched_rooms_defensive.append(self._door['room_name'])
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
@@ -1392,7 +1408,7 @@ class robot(custom_agent_brain):
                             if self._decided_time and int(self._second) < self._decided_time + 5:
                                 for info in state.values():
                                     #if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in' in info['name']:
-                                    if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] in info['name']:
+                                    if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                             # wait 5 seconds before removing the object/extinguishing the fire because MATRX's action duration did not work
                             if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
@@ -1464,7 +1480,7 @@ class robot(custom_agent_brain):
                                 if self._decided_time and int(self._second) < self._decided_time + 5:
                                     for info in state.values():
                                         #if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in' in info['name']:
-                                        if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] in info['name']:
+                                        if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                             return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                                 # remove object/extinguish fire after 5 seconds of waiting time
                                 if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
@@ -1497,6 +1513,7 @@ class robot(custom_agent_brain):
             if Phase.PLAN_PATH_TO_VICTIM == self._phase:
                 if self._door['room_name'] not in self._searched_rooms_offensive:
                     self._searched_rooms_offensive.append(self._door['room_name'])
+                if self._door['room_name'] not in self._searched_rooms_defensive:
                     self._searched_rooms_defensive.append(self._door['room_name'])
                 self._navigator.reset_full()
                 self._navigator.add_waypoints([self._victim_locations[self._goal_victim]['location']])

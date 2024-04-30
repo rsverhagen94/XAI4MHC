@@ -230,7 +230,7 @@ class tutorial_robot(custom_agent_brain):
         self._send_message("Temperature: " + self._temperature + ".", self._name)
         self._send_message("Location: " + self._location + ".", self._name)
         self._send_message("Distance: " + self._distance + ".", self._name)
-
+    
         # infinite loop until task is completed
         while True:              
             # phase used to determine the next goal victim to rescue
@@ -439,7 +439,7 @@ class tutorial_robot(custom_agent_brain):
                             self._id = info['obj_id']
                             self._fire_location = info['location']
                             self._waiting = True
-                            self.agent_properties["img_name"] = "/images/extinguish-titus.svg"
+                            self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                             self.agent_properties["visualize_size"] = 1.8
                             return Idle.__name__, {'action_duration': 0}
                 # remove fire objects pinned on the map
@@ -457,7 +457,7 @@ class tutorial_robot(custom_agent_brain):
                     # keep track of which fires are extinguished
                     if self._fire_location not in self._extinguished_fire_locations:
                         self._extinguished_fire_locations.append(self._fire_location)
-                    self.agent_properties["img_name"] = "/images/final-titus2.svg"
+                    self.agent_properties["img_name"] = "/images/robot-final4.svg"
                     self.agent_properties["visualize_size"] = 1.1
                     self._phase = Phase.FIND_NEXT_GOAL
                     return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
@@ -471,7 +471,7 @@ class tutorial_robot(custom_agent_brain):
                 # determine the image name of the visual explanation
                 image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
                 # calculate the predicted sensitivity for this situation
-                self._sensitivity = R_to_Py_plot_tactic(self._total_victims_cat, self._location_cat, self._resistance, image_name)
+                self._sensitivity = 4.0
                 self._plot_generated = True
                 # allocate decision making to human because the predicted sensitivity is higher than the allocation threshold
                 if self._sensitivity > 4.1:
@@ -827,11 +827,6 @@ class tutorial_robot(custom_agent_brain):
                     and room['room_name'] not in self._searched_rooms_defensive]
                 # reset some variables and start re-searching if all rooms have been explored
                 if self._remaining_zones and len(unsearched_rooms) == 0:
-                    if self._tactic == 'defensive':
-                        self._searched_rooms_defensive = []
-                        if self._door['room_name'] not in self._searched_rooms_defensive:
-                            self._searched_rooms_defensive.append(self._door['room_name'])
-                        self._send_message("Going to re-explore all offices to extinguish fires.", self._name)
                     if self._tactic == 'offensive':
                         self._searched_rooms_offensive = []
                         self._lost_victims = []
@@ -839,6 +834,12 @@ class tutorial_robot(custom_agent_brain):
                             self._searched_rooms_offensive.append(self._door['room_name'])
                         self._offensive_search_rounds += 1
                         self._send_message("Going to re-explore all offices to rescue victims.", self._name)
+                    if self._tactic == 'defensive':
+                        self._searched_rooms_defensive = []
+                        if self._door['room_name'] not in self._searched_rooms_defensive:
+                            self._searched_rooms_defensive.append(self._door['room_name'])
+                        self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
+                        self._tactic = 'offensive'
                     self._send_messages = []
                     self._fire_locations = {}
                     self.received_messages = []
@@ -1226,7 +1227,7 @@ class tutorial_robot(custom_agent_brain):
                             if self.received_messages_content and self.received_messages_content[-1] == 'Extinguish':
                                 self._decided_time = int(self._second)
                                 self._send_message("Extinguishing the fire in office " + self._door['room_name'].split()[-1] + " first.", self._name)
-                                self.agent_properties["img_name"] = "/images/extinguish-titus.svg"
+                                self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                                 self.agent_properties["visualize_size"] = 1.8
                                 for info in state.values():
                                     if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
@@ -1235,11 +1236,11 @@ class tutorial_robot(custom_agent_brain):
                             # already remove fire object pinned on map while waiting
                             if self._decided_time and int(self._second) < self._decided_time + 5:
                                 for info in state.values():
-                                    if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] in info['name']:
+                                    if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                             # wait 5 seconds before removing the object/extinguishing the fire because MATRX's action duration did not work
                             if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
-                                self.agent_properties["img_name"] = "/images/final-titus2.svg"
+                                self.agent_properties["img_name"] = "/images/robot-final4.svg"
                                 self.agent_properties["visualize_size"] = 1.1
                                 if self._fire_location not in self._extinguished_fire_locations:
                                     self._extinguished_fire_locations.append(self._fire_location)
@@ -1291,7 +1292,7 @@ class tutorial_robot(custom_agent_brain):
                                     self._send_message("Extinguishing the fire in office " + self._door['room_name'].split()[-1] + " first because these are the general guidelines.", self._name)
                                     self._decided_time = int(self._second)
                                     self._waiting = True
-                                    self.agent_properties["img_name"] = "/images/extinguish-titus.svg"
+                                    self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                                     self.agent_properties["visualize_size"] = 1.8
                                     for info in state.values():
                                         if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
@@ -1301,12 +1302,11 @@ class tutorial_robot(custom_agent_brain):
                                 if self._decided_time and int(self._second) < self._decided_time + 5:
                                     for info in state.values():
                                         #if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in' in info['name']:
-                                        if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] in info['name']:
-                                            print(info)
+                                        if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                             return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                                 # remove object/extinguish fire after 5 seconds of waiting time
                                 if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
-                                    self.agent_properties["img_name"] = "/images/final-titus2.svg"
+                                    self.agent_properties["img_name"] = "/images/robot-final4.svg"
                                     self.agent_properties["visualize_size"] = 1.1
                                     # keep track of the extinguished fires as it determine the temperature in the building
                                     if self._fire_location not in self._extinguished_fire_locations:

@@ -135,7 +135,7 @@ class firefighter(custom_agent_brain):
                     self._navigator.add_waypoints(room_tiles)
                     self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                 else:
-                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for us to continue searching for the fire source.', agent_name.replace('_', ' ').capitalize())
+                    self._send_message('<b>ABORTING TASK!</b> The conditions are too dangerous for me to continue searching for the fire source in ' + self._area + '.', agent_name.replace('_', ' ').capitalize())
                     self.agent_properties["img_name"] = "/images/human-danger2.gif"
                     self.agent_properties["visualize_size"] = 2.0
                     self._phase = Phase.PLAN_EXIT

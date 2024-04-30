@@ -14,7 +14,15 @@ if __name__ == "__main__":
     print("\nEnter one of the environments 'trial' or 'experiment':")
     environment = input()
     if environment == 'trial':
-        builder = create_builder(exp_version = 'trial', condition = 'tutorial')
+        media_folder = pathlib.Path().resolve()
+        print("Starting custom visualizer")
+        vis_thread = visualization_server.run_matrx_visualizer(verbose = False, media_folder = media_folder)
+        builder = create_builder(id = 'na', exp_version = 'trial', name = 'Brutus', condition = 'tutorial', task = 'na', counterbalance_condition = 'na')
+        builder.startup(media_folder = media_folder)
+        print("Started world...")
+        world = builder.get_world()
+        builder.api_info['matrx_paused'] = False
+        world.run(builder.api_info)
     else:
         print("\nEnter one of the conditions 'baseline', 'shap', or 'util':")
         condition = input()
@@ -148,11 +156,11 @@ if __name__ == "__main__":
                                              total_allocations, human_allocations, robot_allocations, total_interventions, disagreement_rate, correct_behavior_rate, incorrect_behavior_rate, correct_intervention_rate, 
                                              incorrect_intervention_rate, firefighter_decisions, firefighter_danger, firefighter_danger_rate, CRR_ND_self, FR_ND_self, FRR_MD_self, CR_MD_self, CRR_MD_robot, FR_MD_robot, CRR_ND_robot, FR_ND_robot])
 
-            print("DONE!")
-            print("Shutting down custom visualizer")
-            r = requests.get("http://localhost:" + str(visualization_server.port) + "/shutdown_visualizer")
-            vis_thread.join()
         else:
             print("\nWrong condition name entered")
 
+    print("DONE!")
+    print("Shutting down custom visualizer")
+    r = requests.get("http://localhost:" + str(visualization_server.port) + "/shutdown_visualizer")
+    vis_thread.join()
     builder.stop()
