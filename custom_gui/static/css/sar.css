@@ -350,9 +350,9 @@ h6 {
 .dropdown:hover .dropbtn {background-color: #000000;}
 
 .btn-primary:hover{color:#fff;background-color:#000000;border-color:#000000}
-.btn-primary:focus,.btn-primary.focus{box-shadow:0 0 0 .2rem #000000}
+.btn-primary:focus,.btn-primary.focus{box-shadow:0 0 0 .2rem #e5ddd5}
 .btn-primary.disabled,
-.btn-primary:disabled{color:#fff;background-color:#000000;border-color:#000000}
+.btn-primary:disabled{color:#fff;background-color:#e5ddd5;border-color:#e5ddd5}
 .btn-primary:not(:disabled):not(.disabled):active,
 .btn-primary:not(:disabled):not(.disabled).active,
 .show>.btn-primary.dropdown-toggle{color:#fff;background-color:#000000;border-color:#000000}
