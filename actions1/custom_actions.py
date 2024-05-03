@@ -22,8 +22,8 @@ class AddObject(Action):
                 "location": kwargs['add_objects'][i]['location'],
                 "name": kwargs['add_objects'][i]['name'],
                 "class_callable": EnvObject,
-                "is_traversable": True,
-                "is_movable": False,
+                "is_traversable": kwargs['add_objects'][i]['is_traversable'],
+                "is_movable": kwargs['add_objects'][i]['is_movable'],
                 "visualize_size": kwargs['add_objects'][i]['visualize_size'],
                 "visualize_opacity": kwargs['add_objects'][i]['visualize_opacity'],
                 "img_name": kwargs['add_objects'][i]['img_name']

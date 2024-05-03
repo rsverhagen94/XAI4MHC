@@ -42,6 +42,7 @@ class firefighter(custom_agent_brain):
         self._send_messages = []
         self._rescued = []
         self._modulos = []
+        self._added = []
         self._goal_victim = None
         self._decided = None
         self._location = '?'
@@ -58,9 +59,28 @@ class firefighter(custom_agent_brain):
         return state
 
     def decide_on_bw4t_action(self, state: State):
+        agent_name = state[self.agent_id]['obj_id']
+        if self._resistance == 149:
+            action_kwargs = add_object([(12,6),(12,5),(12,4)], "/images/smoke.svg", 1.75, 1, 'smog', True, True)
+            return AddObject.__name__, action_kwargs
+        if agent_name == 'fire_fighter_1' and self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] and 'first' in self.received_messages_content[-1]:
+            if (23,4) not in self._added:
+                self._added.append((23,4))
+                action_kwargs = add_object([(23,4)], "/images/girder.svg", 1.25, 1, 'iron', False, True)
+                return AddObject.__name__, action_kwargs
+        if agent_name == 'fire_fighter_1' and self.received_messages_content and 'Evacuating' in self.received_messages_content[-1] and 'first' in self.received_messages_content[-1]:
+            if(23,2) not in self._added:
+                self._added.append((23,2))
+                action_kwargs = add_object([(23,2)], "/images/fire2.svg", 2, 1, 'spread fire', True, True)
+                return AddObject.__name__, action_kwargs
+            return RemoveObject.__name__, {'object_id': 'fire_in_office_4', 'remove_range': 100}
+        if self.received_messages_content:
+            for msg in self.received_messages_content:
+                if 'Evacuating' in msg and 'first' in msg:
+                    return RemoveObject.__name__, {'object_id': 'fire_in_4', 'remove_range': 100}
+
         if self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] and self.received_messages_content[-1] not in self._extinguished_fires:
             self._extinguished_fires.append(self.received_messages_content[-1])
-        agent_name = state[self.agent_id]['obj_id']
 
         if self._no_fires == 8:
             if len(self._extinguished_fires) / self._no_fires < 0.75 and self._resistance <= 30:
@@ -149,13 +169,13 @@ class firefighter(custom_agent_brain):
                         if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._location != 'found':
                             self._send_message('<b>Fire source</b> located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
-                            action_kwargs = add_object([info['location']], "/images/source-final.svg", 2, 1, 'fire source in ' + self._area)
+                            action_kwargs = add_object([info['location']], "/images/source-final.svg", 2, 1, 'fire source in ' + self._area, True, True)
                             self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                             return AddObject.__name__, action_kwargs
                         if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._location != 'found':
                             self._send_message('Fire located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
-                            action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire in ' + self._area)
+                            action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire in ' + self._area, True, True)
                             self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                             return AddObject.__name__, action_kwargs
                     return action, {}

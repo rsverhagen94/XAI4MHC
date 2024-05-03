@@ -46,7 +46,7 @@ def add_agents(builder, name, condition, exp_version, resistance, no_fires, vict
     sense_capability = SenseCapability({AgentBody: np.inf, 
                                         CollectableBlock: 1, 
                                         None: np.inf, 
-                                        IronObject: 1, 
+                                        IronObject: 2, 
                                         FireObject: 1, 
                                         SmokeObject: np.inf})
     
@@ -102,7 +102,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
     np.random.seed(random_seed)
 
     if task == 1:
-        time = 1080
+        time = 1800
     if task == 2:
         time = 1080
     if task == 3:
@@ -253,18 +253,21 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             builder.add_object(loc, 'roof', EnvObject, is_traversable = True, is_movable = False, visualize_shape = 'img', img_name = "/images/wall_right.png")
 
         if task == 1:
-            resistance = 91
-            no_fires = 8
+            resistance = 151
+            no_fires = 10
             victims = 'known'
             builder.add_object((3,9), 'critically injured woman in area 5', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg")
-            builder.add_object((3,1), 'mildly injured man in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man2.svg")
+            builder.add_object((3,1), 'mildly injured man in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg")
+            builder.add_object((2,1), 'mildly injured woman in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman3.svg")
             builder.add_object((3,23), 'critically injured elderly man in area 11', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly man.svg")
             builder.add_object((3,16), 'critically injured man in area 8', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured man.svg")
             builder.add_object((10,2), 'critically injured elderly woman in area 2', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly woman.svg")
             builder.add_object((10,15), 'mildly injured elderly man in area 9', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man.svg")
-            builder.add_object((9,15), 'mildly injured man in area 9', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg")
+            builder.add_object((17,1), 'mildly injured elderly man in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man2.svg")
+            builder.add_object((16,1), 'mildly injured woman in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman2.svg")
             builder.add_object((24,1), 'mildly injured elderly woman in area 4', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman.svg")
-            builder.add_object((17,1), 'mildly injured woman in area 3', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg")
+            builder.add_object((9,15), 'mildly injured woman in area 9', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg")
+            builder.add_object((17,23), 'mildly injured elderly woman in area 13', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman2.svg")
             builder.add_object((9,8), 'source', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
             builder.add_object(location = (9,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.25)
             for i in [(9,6), (8,6), (7,6), (10,6), (10,5), (10,4), (9,5), (9,4), (8,5), (8,4), (7,5), (7,4), (11,6), (11,5), (11,4)]:
@@ -277,26 +280,37 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
             builder.add_object((16,16), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True) 
             builder.add_object((16,7), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
             builder.add_object((16,3), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
-            builder.add_object((24,2), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)
-            builder.add_object((16,21), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
+            builder.add_object((24,2), 'fire in 4', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)
+            builder.add_object((23,21), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
             builder.add_object((9,17), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
             builder.add_object((16,8), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
+            builder.add_object((23,22), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
             builder.add_object((23,3), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
-            builder.add_object((23,21), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
+            builder.add_object((16,21), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
+            builder.add_object((9,3), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
+            builder.add_object((16,17), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
             builder.add_object((3,2), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)
+
+            builder.add_object((17,22), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)
             #builder.add_object((16,21), 'iron', IronObject, visualize_shape = 'img', img_name = "/images/girder.svg", visualize_size = 1, weight = 100, is_traversable = False, is_movable = True)
             builder.add_object((10,16), 'fire', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)          
             #builder.add_object((3,2), 'critically injured woman in area 1', callable_class = CollectableBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg")
-            builder.add_object((25,8), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,9), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,10), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,11), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,12), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured man2.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,13), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,14), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-            builder.add_object((25,15), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,6), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,7), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,8), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured elderly woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,9), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/critically injured man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
             builder.add_object((25,16), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
-        
+            builder.add_object((25,17), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly woman2.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,12), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man2.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,13), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured elderly man.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,14), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,15), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman2.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,10), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured woman3.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            builder.add_object((25,11), name = "Collect Block", callable_class = GhostBlock, visualize_shape = 'img', img_name = "/images/mildly injured man2.svg", drop_zone_nr = 0, visualize_opacity = 0.5)
+            
+            
+            
+
         if task == 2:
             resistance = 91
             no_fires = 10
