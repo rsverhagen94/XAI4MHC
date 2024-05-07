@@ -165,7 +165,7 @@ class robot(custom_agent_brain):
                 if self._tactic == 'defensive' and calculate_distances(self._current_location, info['location']) <= 1:
                     self._phase = Phase.EXTINGUISH_CHECK
             if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'IronObject' not in info['class_inheritance'] and self._current_location in self._office_doors.keys():
-                self._send_message('Iron debris fell down the roof and blocked the exit of ' + self._current_room + ' because we extinguished first. Removing the iron debris...', self._name)
+                self._send_message('Iron debris fell down the roof and blocked the exit of ' + self._current_room + ' because we extinguished first. Removing the iron debris.', self._name)
                 self._phase = Phase.REMOVE_OBSTACLE_IF_NEEDED
             if 'class_inheritance' in info and 'AreaTile' in info['class_inheritance'] and info['location'] not in self._room_tiles:
                 self._room_tiles.append(info['location'])
@@ -236,28 +236,20 @@ class robot(custom_agent_brain):
         if self._time_left - self._resistance not in self._plot_times:
             self._plot_generated = False
 
-        # determine temperature based on the number of fires in the building, fire resistance, and number of extinguished fires
         if self._no_fires == 8:
-            # temperature higher if less than 75% extinguished and fire resistance less than 31 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires < 0.75 and self._resistance <= 50:
+            if len(self._extinguished_fire_locations) / self._no_fires != 1 and self._resistance <= 50:
                 self._temperature = '>'
                 self._temperature_cat = 'higher'
-            # temperature lower if more than 74% extinguished or if resistance is higher than 45 minutes
-            if len(self._extinguished_fire_locations) / self._no_fires >= 0.75 or self._resistance > 75:
-                self._temperature = '<'
-                self._temperature_cat = 'lower'
-            # temperature close if less than 75% and more than 24% extinguished and resistance less than 45 minutes or less than 75% extinguished and resistance between 36 and 45 minutes
-            if self._resistance > 50 and self._resistance <= 75 and len(self._extinguished_fire_locations) / self._no_fires < 0.75 or \
-                len(self._extinguished_fire_locations) / self._no_fires < 0.75 and len(self._extinguished_fire_locations) / self._no_fires > 0.25 and self._resistance <= 75:
+            if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance > 25 and self._resistance <= 50:
+                self._temperature = '>'
+                self._temperature_cat = 'higher'
+            if len(self._extinguished_fire_locations) / self._no_fires != 1 and self._resistance > 50:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
-
-
-        if self._no_fires == 10:
-            if self._resistance <= 75 and len(self._extinguished_fire_locations) / self._no_fires != 1:
-                self._temperature = '>'
-                self._temperature_cat = 'higher'
-            if self._resistance > 75 or len(self._extinguished_fire_locations) / self._no_fires == 1:
+            if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance > 50:
+                self._temperature = '<≈'
+                self._temperature_cat = 'close'
+            if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance <= 25:
                 self._temperature = '<≈'
                 self._temperature_cat = 'close'
 
@@ -314,7 +306,7 @@ class robot(custom_agent_brain):
                     self._total_victims = '?'
                     self._total_victims_cat = 'unclear'
                 # switch to defensive if all offices have been searched and display total number of victims as it is no longer unknown
-                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting:
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting and len(self._extinguished_fire_locations) != self._no_fires:
                     self._total_victims = len(remaining_victims) + len(self._rescued_victims)
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victim that we found but could not rescue.', self._name)
@@ -329,7 +321,7 @@ class robot(custom_agent_brain):
                     self._victims = 'known'
                     self._waiting = False
                 # switch to defensive if all victims have been found but not rescued
-                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting:
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) != self._no_fires:
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
                     else:
@@ -409,7 +401,7 @@ class robot(custom_agent_brain):
                             if info['visualization']['size'] == 1.25:
                                 self._extinguish_time = 5
                             if info['visualization']['size'] == 2:
-                                self._extinguish_time = 15
+                                self._extinguish_time = 10
                             self._decided_time = int(self._second)
                             self._id = info['obj_id']
                             self._fire_location = info['location']
@@ -447,38 +439,38 @@ class robot(custom_agent_brain):
                     return None, {}
 
             # determine at which times the switch tactics situations occur
-            if self._task == 1:
+            #if self._task == 1:
                 # mildly injured elderly  woman2 in office 13
-                if self._current_location == (25,17) and 'switch 1' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-                    self._situation = 'switch 1'
+            #    if self._current_location == (25,17) and 'switch 1' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
+            #        self._situation = 'switch 1'
                 # mildly injured elderly man in office 9
-                if self._current_location == (25,13) and 'switch 2' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-                    self._situation = 'switch 2'
+            #    if self._current_location == (25,13) and 'switch 2' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
+            #        self._situation = 'switch 2'
                 # mildly injured elderly man2 in office 3
-                if self._current_location == (25,12) and 'switch 3' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-                    self._situation = 'switch 3'
+            #    if self._current_location == (25,12) and 'switch 3' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
+            #        self._situation = 'switch 3'
                 # mildly injured man in office 1
-                if self._current_location == (25,10) and 'switch 4' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-                    self._situation = 'switch 4'
+            #    if self._current_location == (25,10) and 'switch 4' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
+            #        self._situation = 'switch 4'
                 
-                if self._current_location == (5,12) and 'switch 5' not in self._situations:
-                    self._situation = 'switch 5'
+            #    if self._current_location == (5,12) and 'switch 5' not in self._situations:
+            #        self._situation = 'switch 5'
 
-            #if self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 36 and 'switch 1' not in self._situations:
-            #    self._situation = 'switch 1'
-            #if self._time_left - self._resistance >= 46 and self._time_left - self._resistance <= 56 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._situation = 'switch 2'
-            #if self._time_left - self._resistance >= 66 and self._time_left - self._resistance <= 76 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._situation = 'switch 3'
-            #if self._time_left - self._resistance >= 86 and self._time_left - self._resistance <= 96 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._situation = 'switch 4'
-            #if self._time_left - self._resistance >= 106 and self._time_left - self._resistance <= 116 and 'switch 5' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._situation = 'switch 5'
+            if self._time_left - self._resistance >= 40 and self._time_left - self._resistance <= 45 and 'switch 1' not in self._situations:
+                self._situation = 'switch 1'
+            if self._time_left - self._resistance >= 60 and self._time_left - self._resistance <= 65 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims:
+                self._situation = 'switch 2'
+            if self._time_left - self._resistance >= 80 and self._time_left - self._resistance <= 85 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims:
+                self._situation = 'switch 3'
+            if self._time_left - self._resistance >= 100 and self._time_left - self._resistance <= 105 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims:
+                self._situation = 'switch 4'
+            if self._time_left - self._resistance >= 120 and self._time_left - self._resistance <= 125 and 'switch 5' not in self._situations and len(self._found_victims) != self._total_victims:
+                self._situation = 'switch 5'
             #if self._time_left - self._resistance >= 126 and self._time_left - self._resistance <= 136 and 'switch 6' not in self._situations and len(self._found_victims) != self._total_victims:
             #    self._situation = 'switch 6'
 
             # present the switch tactics situation once the robot leaves an office
-            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting:
+            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys():
                 self._situations.append(self._situation)
                 # determine the image name of the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
@@ -560,21 +552,21 @@ class robot(custom_agent_brain):
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'util':
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                 These are the positive and negative consequences of both decision options: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself.', self._name)
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
 
                     if self._tactic == 'defensive':
                         self._deploy_time = self._defensive_deployment_time
@@ -582,21 +574,21 @@ class robot(custom_agent_brain):
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'util':
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                 These are the positive and negative consequences of both decision options: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate it to yourself.', self._name)
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                     # allocate decision making to robot and keep track of time to ensure enough reading time of explanations 
                     self._decide = self._name
                     self._plot_times.append(self._time_left - self._resistance)
@@ -774,11 +766,11 @@ class robot(custom_agent_brain):
                     return None, {}
 
             # if between 15 and 25 minutes the fire source has not been located, present situation 'send in fire fighters to locate fire source or not'
-            #if self._time_left - self._resistance >= 15 and self._time_left - self._resistance <= 25 and self._location == '?' and not self._plot_generated and \
-            #    self._current_location not in self._room_tiles and 'locate' not in self._situations:
+            if self._time_left - self._resistance >= 30 and self._time_left - self._resistance <= 35 and self._location == '?' and not self._plot_generated and \
+                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._current_location not in self._office_doors.keys():
 
             # mildly injured woman in office 13
-            if self._task == 1 and self._current_location == (25,14) and not self._evacuating and 'locate' not in self._situations and self._location == '?' and not self._plot_generated and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
+            #if self._task == 1 and self._current_location == (25,14) and not self._evacuating and 'locate' not in self._situations and self._location == '?' and not self._plot_generated and self._phase != Phase.FOLLOW_PATH_TO_ROOM and self._phase != Phase.LOCATE:
 
             #if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and self._location == '?' and not self._plot_generated and \
             #    self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 1 and not self._waiting or \
@@ -831,19 +823,19 @@ class robot(custom_agent_brain):
                     if self._condition == 'shap':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                             This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                             + image_name, self._name)
                     if self._condition == 'util':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                             These are the positive and negative consequences of both decision options: \n \n ' \
                                             + image_name, self._name)
                     if self._condition == 'baseline':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate it to yourself.', self._name)
+                                            (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                     # allocate decision making to robot and keep track of time to ensure enough reading time for visual explanations
                     self._decide = self._name
                     self._plot_times.append(self._time_left - self._resistance)
@@ -1033,17 +1025,19 @@ class robot(custom_agent_brain):
                         if 'class_inheritance' in info and 'IronObject' in info['class_inheritance'] and 'iron' in info['obj_id']:
                             self._send_message('Removing the iron debris blocking ' + str(self._door['room_name']) + '.', self._name)
                             self._decided_time = int(self._second)
+                            self._removal_time = 5
                             self._id = info['obj_id']
                             self._waiting = True
                         if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'IronObject' not in info['class_inheritance']:
                             self._decided_time = int(self._second)
+                            self._removal_time = 15
                             self._id = info['obj_id']
                             self._waiting = True
                 # remain idle while waiting
-                if self._decided_time and int(self._second) < self._decided_time + 5:                                                                
+                if self._decided_time and int(self._second) < self._decided_time + self._removal_time:                                                                
                     return None, {}
                 # remove obstacle after 5 seconds of waiting    
-                if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
+                if self._decided_time and int(self._second) >= self._decided_time + self._removal_time and self._id and state[{'obj_id': self._id}]:
                     return RemoveObject.__name__, {'object_id': self._id, 'remove_range': 5}
                 # if obstacle is no longer there or no obstacle was present at all, enter the room
                 if self._id and not state[{'obj_id': self._id}] or not self._id:
@@ -1113,9 +1107,9 @@ class robot(custom_agent_brain):
                                     # calculate the Euclidean distance between the victim and the fire source
                                     distance = calculate_distances(self._fire_source_coords, self._victim_locations[vic]['location'])
                                     # turn the distance into a category 'small' or 'large'
-                                    if distance < 15:
+                                    if distance < 8.4:
                                         self._distance = 'small'
-                                    if distance >= 15:
+                                    if distance >= 8.4:
                                         self._distance = 'large'
                                     # turn the temperature into a category 'lower' or 'higher'
                                     if self._temperature_cat == 'close' or self._temperature_cat == 'lower':
@@ -1179,21 +1173,21 @@ class robot(custom_agent_brain):
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'util':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                                is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                                 These are the positive and negative consequences of both decision options: \n \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'baseline':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                                is below my allocation threshold. However, you can also reallocate it to yourself.', self._name)
+                                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                                         # allocate to robot and keep track of time to ensure enough reading time for the visual explanations
                                         self._decide = self._name
                                         self._plot_times.append(self._time_left - self._resistance)
@@ -1262,21 +1256,21 @@ class robot(custom_agent_brain):
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                        is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                        is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                         This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                         + image_name, self._name)
                                 if self._condition == 'util':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                        is below my allocation threshold. However, you can also reallocate it to yourself. \
+                                                        is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                         These are the positive and negative consequences of both decision options: \n \n ' \
                                                         + image_name, self._name)
                                 if self._condition == 'baseline':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                        is below my allocation threshold. However, you can also reallocate it to yourself.', self._name)
+                                                        is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                                 # allocate to robot and keep track of time to ensure enough reading time for the visual explanation
                                 self._decide = self._name
                                 self._plot_times.append(self._time_left - self._resistance)
