@@ -1192,6 +1192,7 @@ class robot(custom_agent_brain):
                                         self._decide = self._name
                                         self._plot_times.append(self._time_left - self._resistance)
                                         self._time = int(self._second)
+                                        self._last_phase = self._phase
                                         self._phase = Phase.RESCUE
                                         return Idle.__name__, {'action_duration': 0}
                     # execute move action to explore area
@@ -1400,7 +1401,7 @@ class robot(custom_agent_brain):
                                     self._rescued_victims.append(self._recent_victim)
                                 self._decided = False
                                 self._reallocated = False
-                                self._phase = Phase.FIND_NEXT_GOAL
+                                self._phase = self._last_phase
                                 for info in state.values():
                                     if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and self._recent_victim in info['name'] and 'pinned' in info['name']:
                                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5}

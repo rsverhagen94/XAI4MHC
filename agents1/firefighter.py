@@ -68,7 +68,7 @@ class firefighter(custom_agent_brain):
                     self._smoke_plums.append(info)
         agent_name = state[self.agent_id]['obj_id']
         
-        if self._resistance == 40 and self.received_messages_content and 'Extinguishing fire in office 7.' not in self.received_messages_content and agent_name == 'fire_fighter_1':
+        if self._resistance == 35 and self.received_messages_content and 'Extinguishing fire in office 7.' not in self.received_messages_content and agent_name == 'fire_fighter_1':
             if (16,7) not in self._added:
                 self._added.append((16,7))
                 action_kwargs = add_object([(16,7)], "/images/smoke.svg", 1.75, 1, 'smog at 7', True, True)
