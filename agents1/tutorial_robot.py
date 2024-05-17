@@ -156,7 +156,7 @@ class tutorial_robot(custom_agent_brain):
                     self._send_message("Found fire source in " + self._current_room + "!", self._name)
                     self._fire_source_coords = info['location']
                     self._fire_locations[self._current_room] = info['location']
-                    action_kwargs = add_object([info['location']], "/images/source-final.svg", info['visualization']['size'], 1, 'fire source in ' + self._current_room)
+                    action_kwargs = add_object([info['location']], "/images/source-final.svg", info['visualization']['size'], 1, 'fire source in ' + self._current_room, True, True)
                     return AddObject.__name__, action_kwargs
                 self._location = 'found'
                 self._smoke = info['smoke']
@@ -166,7 +166,7 @@ class tutorial_robot(custom_agent_brain):
                 if info['location'] not in self._fire_locations.values() and self._current_room not in self._fire_locations.keys():
                     self._send_message("Found fire in " + self._current_room + ".", self._name)
                     self._fire_locations[self._current_room] = info['location']
-                    action_kwargs = add_object([info['location']], "/images/fire2.svg", info['visualization']['size'], 1, 'fire in ' + self._current_room)
+                    action_kwargs = add_object([info['location']], "/images/fire2.svg", info['visualization']['size'], 1, 'fire in ' + self._current_room, True, True)
                     return AddObject.__name__, action_kwargs
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
@@ -478,17 +478,17 @@ class tutorial_robot(custom_agent_brain):
                     # send correct messages depending on current deployment tactic and explanation condition
                     if self._tactic == 'offensive':
                         self._deploy_time = self._offensive_deployment_time
-                        self._send_message("Our offensive deployment has been going on for " + str(self._offensive_deployment_time) + " minutes now. \
+                        self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to a defensive deployment. \
-                                            Please make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                            is above my allocation threshold.", self._name)
+                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                         
                     if self._tactic == 'defensive':
                         self._deploy_time = self._defensive_deployment_time
-                        self._send_message("Our defensive deployment has been going on for " + str(self._defensive_deployment_time) + " minutes now. \
+                        self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                            Please make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                            is above my allocation threshold.", self._name)
+                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -502,17 +502,17 @@ class tutorial_robot(custom_agent_brain):
                     # send correct messages depending on current deployment tactic and explanation condition
                     if self._tactic == 'offensive':
                         self._deploy_time = self._offensive_deployment_time
-                        self._send_message("Our offensive deployment has been going on for " + str(self._offensive_deployment_time) + " minutes now. \
+                        self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to a defensive deployment. \
-                                            I will make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                            is below my allocation threshold.", self._name)
+                                            <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                            is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
 
                     if self._tactic == 'defensive':
                         self._deploy_time = self._defensive_deployment_time
-                        self._send_message("Our defensive deployment has been going on for " + str(self._defensive_deployment_time) + " minutes now. \
+                        self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                            I will make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                            is below my allocation threshold.", self._name)
+                                            <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                            is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                         
                     # allocate decision making to robot and keep track of time to ensure enough reading time of explanations 
                     self._decide = self._name
@@ -527,9 +527,9 @@ class tutorial_robot(custom_agent_brain):
                 if self._decide == 'human' and self._tactic == 'offensive':
                     self._waiting = True
                     # reallocate decision making to the robot if the human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 25 \
                         or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] \
-                            and int(self._second) < self._time + 15:
+                            and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to me because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -538,7 +538,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = self._name
                     else:
                         # if decision making is allocated to the human, the robot waits 15 seconds before asking the human which decision he/she wants to make
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -572,9 +572,9 @@ class tutorial_robot(custom_agent_brain):
                 if self._decide == 'human' and self._tactic == 'defensive':
                     self._waiting = True
                     # reallocte decision making to robot if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 25 \
                         or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] \
-                            and int(self._second) < self._time + 15:
+                            and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to me because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -583,7 +583,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = self._name
                     else:
                         # if decision making is allocated to the human, the robot waits 15 seconds before asking the human which decision he/she wants to make
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -614,8 +614,8 @@ class tutorial_robot(custom_agent_brain):
 
                 if self._decide == self._name and self._tactic == 'offensive':
                     # reallocte decision making to human if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 15 \
-                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 25 \
+                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to you because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -623,7 +623,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = 'human'
                     else:
                         # if decision making is allocated to the robot, it waits 15 seconds before telling the human its decision
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -653,8 +653,8 @@ class tutorial_robot(custom_agent_brain):
 
                 if self._decide == self._name and self._tactic == 'defensive':
                     # reallocte decision making to human if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 15 \
-                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 25 \
+                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to you because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -662,7 +662,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = 'human'
                     else:
                         # if decision making is allocated to the robot, it waits 15 seconds before telling the human its decision
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -700,9 +700,9 @@ class tutorial_robot(custom_agent_brain):
                 self._plot_generated = True
                 # allocate decision making to human if predicted sensivitiy is higher than the allocation threshold
                 if self._sensitivity > 4.1:
-                    self._send_message("The fire source still has not been located, so we should decide whether to send in a fire fighter to help locate the fire source \
-                                        or if sending one in is too dangerous. Please make this decision because the predicted moral sensitivity of this situation \
-                                        (<b>" + str(self._sensitivity) + "</b>) is above my allocation threshold.", self._name)
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(self._sensitivity) + '</b>) exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time for the explanations
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -713,9 +713,9 @@ class tutorial_robot(custom_agent_brain):
 
                 # allocate decision making to the robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
                 if self._sensitivity <= 4.1:
-                    self._send_message("The fire source still has not been located, so we should decide whether to send in a fire fighter to help locate the fire source \
-                                        or if sending one in is too dangerous. I will make this decision because the predicted moral sensitivity of this situation \
-                                        (<b>" + str(self._sensitivity) + "</b>) is below my allocation threshold.", self._name)
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(self._sensitivity) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                     # allocate decision making to robot and keep track of time to ensure enough reading time for visual explanations
                     self._decide = self._name
                     self._plot_times.append(self._time_left - self._resistance)
@@ -729,8 +729,8 @@ class tutorial_robot(custom_agent_brain):
                 if self._decide == 'human':
                     self._waiting = True
                     # reallocate decision making to robot if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
-                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 25 \
+                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to me because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -739,7 +739,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = self._name
                     else:
                         # robot waits 15 seconds before asking human to make a decision to ensure enough reading time
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -772,8 +772,8 @@ class tutorial_robot(custom_agent_brain):
                 
                 if self._decide == self._name:
                     # reallocate to robot if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 15 \
-                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 25 \
+                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to you because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -781,7 +781,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = 'human'
                     else:
                         # wait 15 seconds before robot tells human its decision to ensure enough reading time of explanation
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -964,7 +964,7 @@ class tutorial_robot(custom_agent_brain):
                                 if vic not in self._found_victims:
                                     self._found_victims.append(vic)
                                     self._victim_locations[vic] = {'location': info['location'], 'room': self._door['room_name'], 'obj_id': info['obj_id']}
-                                    action_kwargs = add_object([info['location']], info['img_name'], 0.9, 1, vic + ' pinned')
+                                    action_kwargs = add_object([info['location']], info['img_name'], 0.9, 1, vic + ' pinned', True, True)
                                     return AddObject.__name__, action_kwargs
                                 if 'critical' in vic and not self._plot_generated:
                                     image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" + vic.replace(' ', '_') + ".svg"
@@ -985,10 +985,10 @@ class tutorial_robot(custom_agent_brain):
                                     self._plot_generated = True
                                     # allocate decision making to the human if the predicted moral sensitivity is higher than the allocation threshold
                                     if self._sensitivity > 4.1:
-                                        self._send_message("I have found " + vic + " who I cannot evacuate to safety myself. \
-                                                            We should decide whether to send in a fire fighter to rescue this victim, or if sending one in is too dangerous. \
-                                                            Please make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                                            is above my allocation threshold.", self._name)
+                                        self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                                            We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
+                                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                         # allocate to human and keep track of time to ensure enough reading time of the explanation
                                         self._decide = 'human'
                                         self._time = int(self._second)
@@ -997,15 +997,15 @@ class tutorial_robot(custom_agent_brain):
                                     # allocate to robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
                                     if self._sensitivity <= 4.1:
                                         if self._offensive_search_rounds == 0:
-                                            self._send_message("I have found " + vic + " who I cannot evacuate to safety myself. \
-                                                                We should decide whether to send in a fire fighter to rescue this victim, or if sending one in is too dangerous. \
-                                                                I will make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                                                is below my allocation threshold.", self._name)
+                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                                                We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
+                                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                                         if self._offensive_search_rounds > 0:
-                                            self._send_message("I have found " + vic + " who I cannot evacuate to safety myself. \
-                                                                We should decide whether to send in a fire fighter to rescue this victim, or if sending one in is too dangerous. \
-                                                                I will make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                                                is below my allocation threshold. \n \n \
+                                            self._send_message("I have found " + vic + " in office " + self._door['room_name'].split()[-1] + ". \
+                                                                We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
+                                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>" + str(self._sensitivity) + "</b>) \
+                                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \n \n \
                                                                 <b>For this situation, see what happens when you reallocate decision-making to yourself by pressing the '\"Allocate to me\"' button</b>.", self._name)
                                         # allocate to robot and keep track of time to ensure enough reading time for the visual explanations
                                         self._decide = self._name
@@ -1030,10 +1030,10 @@ class tutorial_robot(custom_agent_brain):
                             self._plot_generated = True
                             # allocate decision making to the human if the predicted moral sensitivity is higher than the allocation threshold
                             if self._sensitivity > 4.1:
-                                self._send_message("I have found " + str(self._room_victims) + " in the burning office " + self._door['room_name'].split()[-1] + ". \
-                                                    We should decide whether to first extinguish the fire or evacuate the " + self._vic_string + ". \
-                                                    Please make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                                    is above my allocation threshold.", self._name)
+                                self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
+                                                    We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
+                                                    <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                                    exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                 # allocate to human and keep track of time to ensure enough reading time for the visual explanations
                                 self._decide = 'human'
                                 self._time = int(self._second)
@@ -1041,10 +1041,10 @@ class tutorial_robot(custom_agent_brain):
                                 return Idle.__name__, {'action_duration': 0}
                             # allocate decision making to the robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
                             if self._sensitivity <= 4.1:
-                                self._send_message("I have found " + str(self._room_victims) + " in the burning office " + self._door['room_name'].split()[-1] + ". \
-                                                    We should decide whether to first extinguish the fire or evacuate the " + self._vic_string + ". \
-                                                    I will make this decision because the predicted moral sensitivity of this situation (<b>" + str(self._sensitivity) + "</b>) \
-                                                    is below my allocation threshold.", self._name)
+                                self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
+                                                    We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
+                                                    <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
+                                                    is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
                                 # allocate to robot and keep track of time to ensure enough reading time for the visual explanation
                                 self._decide = self._name
                                 self._plot_times.append(self._time_left - self._resistance)
@@ -1065,8 +1065,8 @@ class tutorial_robot(custom_agent_brain):
                 # decision allocated to human
                 if self._decide == 'human':
                     # reallocate decision making to robot if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
-                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 25 \
+                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to me because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -1074,7 +1074,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = self._name
                     else:
                         # otherwise wait 15 seconds to ensure enough reading time of task allocation and explanation
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -1134,8 +1134,8 @@ class tutorial_robot(custom_agent_brain):
                 # decision allocated to robot
                 if self._decide == self._name:
                     # reallocate decision making to human if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 15 \
-                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 15 \
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 25 \
+                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 25 \
                     or self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and self._offensive_search_rounds > 0 \
                     or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and self._offensive_search_rounds > 0:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to you because you intervened. \
@@ -1145,7 +1145,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = 'human'
                     else:
                         # otherwise wait 15 seconds before communicating which decision the robot made
-                        if int(self._second) >= self._time + 15 and self._offensive_search_rounds == 0:
+                        if int(self._second) >= self._time + 25 and self._offensive_search_rounds == 0:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -1207,8 +1207,8 @@ class tutorial_robot(custom_agent_brain):
                 # decision allocated to human
                 if self._decide == 'human':
                     # reallocate decision making to robot if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 15 \
-                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to robot' and int(self._second) < self._time + 25 \
+                        or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to me' in self.received_messages_content[-1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to me because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -1216,7 +1216,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = self._name
                     else:
                         # otherwise wait 15 seconds to ensure enough reading time of allocation and explanation before asking human what to decide
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)
@@ -1265,8 +1265,8 @@ class tutorial_robot(custom_agent_brain):
                 # decision allocated to robot
                 if self._decide == self._name:
                     # reallocate decision making to human if human decides so
-                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 15 \
-                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 15:
+                    if self.received_messages_content and self.received_messages_content[-1] == 'Allocate to me' and int(self._second) < self._time + 25 \
+                    or self.received_messages_content and 'Allocating' in self.received_messages_content[-1] and 'to you' in self.received_messages_content[1] and int(self._second) < self._time + 25:
                         self._send_message("Reallocating the decision with a predicted moral sensitivity of " + str(self._sensitivity) + " to you because you intervened. \
                                             You have now intervened " + str(self._interventions) + " times.", self._name)
                         self._reallocated = True
@@ -1274,7 +1274,7 @@ class tutorial_robot(custom_agent_brain):
                         self._decide = 'human'
                     else:
                         # otherwise wait 15 seconds before making a decision to ensure enough reading time of task allocation and explanation
-                        if int(self._second) >= self._time + 15:
+                        if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
                                 self._send_message("No intervention for decision with sensitivity " + str(self._sensitivity) + " allocated to " + self._decide + " at time " + str(self._time), self._name)

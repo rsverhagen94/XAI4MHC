@@ -27,32 +27,20 @@ if __name__ == "__main__":
         print("\nEnter one of the conditions 'baseline', 'shap', or 'util':")
         condition = input()
         if condition == 'shap' or condition == 'util' or condition == 'baseline':
-            print("\nEnter one of the 16 counterbalancing conditions:")
+            print("\nEnter one of the 8 counterbalancing conditions:")
             counterbalance_condition = input()
             if counterbalance_condition == '1' or counterbalance_condition == '2':
-                robot_order = ['Brutus'] * 2 + ['Titus'] * 2
-                task_order = [1, 4, 2, 3]
+                robot_order = ['Brutus', 'Titus']
+                task_order = [1, 2]
             if counterbalance_condition == '3' or counterbalance_condition == '4':
-                robot_order = ['Titus'] * 2 + ['Brutus'] * 2
-                task_order = [1, 4, 2, 3]
+                robot_order = ['Titus', 'Brutus']
+                task_order = [1, 2]
             if counterbalance_condition == '5' or counterbalance_condition == '6':
-                robot_order = ['Brutus'] * 2 + ['Titus'] * 2
-                task_order = [4, 2, 3, 1]
+                robot_order = ['Brutus', 'Titus']
+                task_order = [2, 1]
             if counterbalance_condition == '7' or counterbalance_condition == '8':
-                robot_order = ['Titus'] * 2 + ['Brutus'] * 2
-                task_order = [4, 2, 3, 1]
-            if counterbalance_condition == '9' or counterbalance_condition == '10':
-                robot_order = ['Brutus'] * 2 + ['Titus'] * 2
-                task_order = [2, 3, 1, 4]
-            if counterbalance_condition == '11' or counterbalance_condition == '12':
-                robot_order = ['Titus'] * 2 + ['Brutus'] * 2
-                task_order = [2, 3, 1, 4]
-            if counterbalance_condition == '13' or counterbalance_condition == '14':
-                robot_order = ['Brutus'] * 2 + ['Titus'] * 2
-                task_order = [3, 1, 4, 2]
-            if counterbalance_condition == '15' or counterbalance_condition == '16':
-                robot_order = ['Titus'] * 2 + ['Brutus'] * 2
-                task_order = [3, 1, 4, 2]
+                robot_order = ['Titus', 'Brutus']
+                task_order = [2, 1]
 
             start_scenario = None
             media_folder = pathlib.Path().resolve()
