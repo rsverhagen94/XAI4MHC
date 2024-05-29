@@ -264,6 +264,21 @@ class tutorial_robot(custom_agent_brain):
                 if self._victims == 'unknown':
                     self._total_victims = '?'
                     self._total_victims_cat = 'unclear'
+                # switch to offensive tactic when temperature is lower than threshold and people are found but not rescued
+                if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and not self._waiting:
+                    self._send_message("Switching to an offensive deployment because the temperature is no longer higher than the safety threshold and there are still victims that we found but did not rescue.", self._name)
+                    self._waiting = True
+                    self._decided_time = int(self._second)
+                if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and self._decided_time and int(self._second) < self._decided_time + 5:
+                    return None, {}
+                if self._tactic == 'defensive' and self._temperature != '>' and len(self._rescued_victims) != len(self._found_victims) and len(self._found_victims) == self._total_victims and self._decided_time and int(self._second) >= self._decided_time + 5:
+                    self._tactic = 'offensive'
+                    self._waiting = False
+                    self._offensive_search_rounds += 1
+                    self._lost_victims = []
+                    self._send_messages = []
+                    self.received_messages = []
+                    self.received_messages_content = []
                 # switch to defensive if all offices have been searched and display total number of victims as it is no longer unknown
                 if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting:
                     self._total_victims = len(remaining_victims) + len(self._rescued_victims)
@@ -399,8 +414,9 @@ class tutorial_robot(custom_agent_brain):
                                    3) <b>Locate fire source</b>: Send in fire fighters to help locate the fire source or do not send them in. \
                                    If after a while we did not locate the fire source, we should decide if it is safe enough to send in fire fighters to help locate. \n \n \
                                    4) <b>Rescue critically injured victims</b>: When we find critically injured victims, we should decide if it is safe enough to send in fire fighters to rescue the victims. \
-                                   Guidelines mention that fire fighters should not enter when the temperature is higher than the safety threshold. \n \n \
-                                   You can find all guidelines below the chat. To make decisions in these 4 situations, we can use the 6 situational features. \
+                                   Guidelines mention that fire fighters should not enter when the conditions are too dangerous. \n \n \
+                                   You can find all guidelines below the chat. To make decisions in these 4 situations, we can use the 6 situational features and guidelines. \
+                                   <b>I will always try to follow the guidelines, but sometimes I do not have all the information</b>. \n \n \
                                    Press the '\"Continue\"' button to proceed to the final instruction step.", self._name)
                 if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                     self.received_messages_content = []
@@ -833,7 +849,6 @@ class tutorial_robot(custom_agent_brain):
                         if self._door['room_name'] not in self._searched_rooms_offensive:
                             self._searched_rooms_offensive.append(self._door['room_name'])
                         self._offensive_search_rounds += 1
-                        self._send_message("Going to re-explore all offices to rescue victims.", self._name)
                     if self._tactic == 'defensive':
                         self._searched_rooms_defensive = []
                         if self._door['room_name'] not in self._searched_rooms_defensive:

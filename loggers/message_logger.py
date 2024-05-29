@@ -74,7 +74,7 @@ class message_logger(GridWorldLogger):
                         self._threshold = mssg.content.split()[6]
                    
                     if (i, mssg.content) not in processed_messages and 'Time left: ' not in mssg.content and 'Smoke spreads: ' not in mssg.content and 'Coordinates vic' not in mssg.content and 'Target' not in mssg.content \
-                        and 'Temperature: ' not in mssg.content and 'Location: ' not in mssg.content and 'Distance: ' not in mssg.content and 'Victims rescued: ' not in mssg.content and 'Counterbalancing' not in mssg.content:
+                        and 'Temperature: ' not in mssg.content and 'Location: ' not in mssg.content and 'Distance: ' not in mssg.content and 'Victims rescued: ' not in mssg.content and 'Counterbalancing' not in mssg.content and 'Current tick is' not in mssg.content:
                         processed_messages.append((i, mssg.content))
 
                         if 'No intervention' in mssg.content and self._threshold == '5.0' and float(mssg.content.split()[6]) < 4.2:

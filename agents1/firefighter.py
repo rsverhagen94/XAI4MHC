@@ -71,13 +71,13 @@ class firefighter(custom_agent_brain):
         if self._resistance == 35 and self.received_messages_content and 'Extinguishing fire in office 06.' not in self.received_messages_content and agent_name == 'fire_fighter_1' and self._task == 1:
             if (9,7) not in self._added:
                 self._added.append((9,7))
-                action_kwargs = add_object([(9,7)], "/images/smoke.svg", 1.75, 1, 'smog at 07', True, True)
+                action_kwargs = add_object([(9,7)], "/images/smoke.svg", 1.75, 1, 'smog at 06', True, True)
                 return AddObject.__name__, action_kwargs
             if (9,5) not in self._added:
                 self._added.append((9,5))
-                action_kwargs = add_object([(9,5)], "/images/smoke.svg", 5, 1, 'smog at 07', True, True)
+                action_kwargs = add_object([(9,5)], "/images/smoke.svg", 5, 1, 'smog at 06', True, True)
                 return AddObject.__name__, action_kwargs
-        if self._resistance == 25 and self.received_messages_content and 'Extinguishing fire in office 05.' not in self.received_messages_content and agent_name == 'fire_fighter_1' and self._task == 2:
+        if self._resistance == 30 and self.received_messages_content and 'Extinguishing fire in office 05.' not in self.received_messages_content and agent_name == 'fire_fighter_1' and self._task == 2:
             if (2,7) not in self._added:
                 self._added.append((2,7))
                 action_kwargs = add_object([(2,7)], "/images/smoke.svg", 1.75, 1, 'smog at 05', True, True)
@@ -113,10 +113,10 @@ class firefighter(custom_agent_brain):
                 for info in state.values():
                     if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'smog_at_06' in info['obj_id']:
                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 100, 'action_duration': 0}
-        if self._task == 2 and self.received_messages_content and 'Extinguishing fire in office 06.' in self.received_messages_content and self._resistance < 25:
-            if not state[{'obj_id': 'brutus', 'location': (9, 7)}]:
+        if self._task == 2 and self.received_messages_content and 'Extinguishing fire in office 05.' in self.received_messages_content and self._resistance < 30:
+            if not state[{'obj_id': 'brutus', 'location': (2, 7)}]:
                 for info in state.values():
-                    if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'smog_at_06' in info['obj_id']:
+                    if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'smog_at_05' in info['obj_id']:
                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 100, 'action_duration': 0}
 
         
@@ -235,10 +235,10 @@ class firefighter(custom_agent_brain):
         if len(self._extinguished_fires) / self._no_fires == 1 and self._resistance > 50:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
-        if len(self._extinguished_fires) / self._no_fires == 1 and self._resistance <= 25 and self._no_fires == 8:
-            self._temperature = '<≈'
-            self._temperature_cat = 'close'
-        if len(self._extinguished_fires) / self._no_fires > 0.8 and self._resistance <= 25 and self._no_fires == 6:
+        #if len(self._extinguished_fires) / self._no_fires == 1 and self._resistance <= 25 and self._no_fires == 8:
+        #    self._temperature = '<≈'
+        #    self._temperature_cat = 'close'
+        if len(self._extinguished_fires) / self._no_fires > 0.8 and self._resistance <= 25:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
 
