@@ -315,12 +315,25 @@ class robot(custom_agent_brain):
                     self._tactic = 'defensive'
                     self._victims = 'known'
                     self._waiting = False
-                # switch to defensive if all victims have been found but not rescued
+                # switch to defensive if all victims have been found but not rescued and not all fires have been extinguished
                 if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) != self._no_fires:
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
                     else:
                         self._send_message('Switching to a defensive deployment to make the conditions safer for the victims that we found but could not rescue.', self._name)
+                    self._waiting = True
+                    self._decided_time = int(self._second)
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and self._decided_time and int(self._second) < self._decided_time + 5:
+                    return None, {}
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and self._decided_time and int(self._second) >= self._decided_time + 5:
+                    self._waiting = False
+                    self._tactic = 'defensive'
+                # switch to defensive if all victims have been found but not rescued and all fires have been extinguished
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) == self._no_fires:
+                    if self._total_victims - len(self._rescued_victims) == 1:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue, by inspecting if any extinguished fires have flared up again.', self._name)
+                    else:
+                        self._send_message('Switching to a defensive deployment to make the conditions safer for the victims that we found but could not rescue, by inspecting if any extinguished fires have flared up again.', self._name)
                     self._waiting = True
                     self._decided_time = int(self._second)
                 if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and self._decided_time and int(self._second) < self._decided_time + 5:
@@ -969,9 +982,13 @@ class robot(custom_agent_brain):
                         self._searched_rooms_defensive = []
                         if self._door['room_name'] not in self._searched_rooms_defensive:
                             self._searched_rooms_defensive.append(self._door['room_name'])
-                        #self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
-                        self._tactic = 'offensive'
-                        self._defensive_search_rounds += 1
+                        if self._temperature_cat != 'higher':
+                            self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
+                            self._tactic = 'offensive'
+                            self._defensive_search_rounds += 1
+                        if self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires:
+                            self._send_message('Going to re-explore all offices to see if any extinguished fires have flared up again.')
+                            self._defensive_search_rounds += 1
                     self._send_messages = []
                     self._fire_locations = {}
                     self.received_messages = []
