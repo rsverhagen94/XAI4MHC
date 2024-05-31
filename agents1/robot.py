@@ -472,7 +472,7 @@ class robot(custom_agent_brain):
             #    self._situation = 'switch 6'
 
             # present the switch tactics situation once the robot leaves an office
-            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys():
+            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys() and self._phase != Phase.LOCATE:
                 self._situations.append(self._situation)
                 # determine the image name of the visual explanation
                 image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
@@ -483,13 +483,13 @@ class robot(custom_agent_brain):
                 if self._condition == 'shap':
                     image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
                 if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Brutus':
-                    image_name = "<img src='/static/images/util_plots/util-continue-defensive-final-brutus.svg'/>"
+                    image_name = "<img src='/static/images/util_plots/defensive-continue-brutus-final.svg'/>"
                 if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Brutus':
-                    image_name = "<img src='/static/images/util_plots/util-continue-offensive-final-brutus.svg'/>"
+                    image_name = "<img src='/static/images/util_plots/offensive-continue-brutus-final.svg'/>"
                 if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Titus':
-                    image_name = "<img src='/static/images/util_plots/util-continue-defensive-titus.svg'/>"
+                    image_name = "<img src='/static/images/util_plots/defensive-continue-titus-final.svg'/>"
                 if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Titus':
-                    image_name = "<img src='/static/images/util_plots/util-continue-offensive-titus.svg'/>"
+                    image_name = "<img src='/static/images/util_plots/offensive-continue-titus-final.svg'/>"
 
                 # allocate decision making to human because the predicted sensitivity is higher than the allocation threshold
                 if self._sensitivity > self._threshold:
@@ -504,21 +504,21 @@ class robot(custom_agent_brain):
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'util':
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
-                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                         
                     if self._tactic == 'defensive':
                         self._deploy_time = self._defensive_deployment_time
@@ -526,21 +526,21 @@ class robot(custom_agent_brain):
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'util':
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
-                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -570,7 +570,7 @@ class robot(custom_agent_brain):
                                                 We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
@@ -592,7 +592,7 @@ class robot(custom_agent_brain):
                                                 We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                 + image_name, self._name)
                         if self._condition == 'baseline':
                             self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
@@ -798,28 +798,25 @@ class robot(custom_agent_brain):
                 if self._condition == 'shap':
                     image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
                 if self._condition == 'util':
-                    if self._temperature_cat != 'higher':
-                        image_name = "<img src='/static/images/util_plots/util-locate-low.svg'/>"
-                    else:
-                        image_name = "<img src='/static/images/util_plots/util-locate-high.svg'/>"
+                    image_name = "<img src='/static/images/util_plots/locate-fire-source.svg'/>"
                 # allocate decision making to human if predicted sensivitiy is higher than the allocation threshold
                 if self._sensitivity > self._threshold:
                     if self._condition == 'shap':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
+                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                             This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                             + image_name, self._name)
                     if self._condition == 'util':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
-                                            These are the positive and negative consequences of both decision options: \n \n ' \
+                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                            These are the potential positive and negative consequences of both decisions: \n ' \
                                             + image_name, self._name)
                     if self._condition == 'baseline':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time for the explanations
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -840,7 +837,7 @@ class robot(custom_agent_brain):
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                             or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
                                             (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                            These are the positive and negative consequences of both decision options: \n \n ' \
+                                            These are the potential positive and negative consequences of both decisions: \n ' \
                                             + image_name, self._name)
                     if self._condition == 'baseline':
                         self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
@@ -972,7 +969,7 @@ class robot(custom_agent_brain):
                         self._searched_rooms_defensive = []
                         if self._door['room_name'] not in self._searched_rooms_defensive:
                             self._searched_rooms_defensive.append(self._door['room_name'])
-                        self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
+                        #self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
                         self._tactic = 'offensive'
                         self._defensive_search_rounds += 1
                     self._send_messages = []
@@ -1134,45 +1131,28 @@ class robot(custom_agent_brain):
                                     if self._condition == 'shap':
                                         image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
                                     if self._condition == 'util':
-                                        if self._temperature_cat != 'higher':
-                                            if 'elderly man' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-low-granddad.svg'/>"                                            
-                                            if 'elderly woman' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-low-grandma.svg'/>" 
-                                            if 'injured woman' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-low-woman.svg'/>" 
-                                            if 'injured man' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-low-man.svg'/>" 
-                                        else:
-                                            if 'elderly man' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-high-granddad.svg'/>"                                            
-                                            if 'elderly woman' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-high-grandma.svg'/>" 
-                                            if 'injured woman' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-high-woman.svg'/>" 
-                                            if 'injured man' in vic:
-                                                image_name = "<img src='/static/images/util_plots/util-rescue-high-man.svg'/>" 
+                                        image_name = "<img src='/static/images/util_plots/rescue-victim.svg'/>"
                                     # allocate decision making to the human if the predicted moral sensitivity is higher than the allocation threshold
                                     if self._sensitivity > self._threshold:
                                         if self._condition == 'shap':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
+                                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'util':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
-                                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'baseline':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                                exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                         # allocate to human and keep track of time to ensure enough reading time of the explanation
                                         self._decide = 'human'
                                         self._time = int(self._second)
@@ -1193,7 +1173,7 @@ class robot(custom_agent_brain):
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                                These are the positive and negative consequences of both decision options: \n \n ' \
+                                                                These are the potential positive and negative consequences of both decisions: \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'baseline':
                                             self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
@@ -1226,38 +1206,28 @@ class robot(custom_agent_brain):
                             if self._condition == 'shap':
                                 image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
                             if self._condition == 'util':
-                                if len(self._room_victims) == 1:
-                                    if 'elderly man' in self._recent_victim:
-                                        image_name = "<img src='/static/images/util_plots/util-evacuate-granddad.svg'/>"
-                                    if 'elderly woman' in self._recent_victim:
-                                        image_name = "<img src='/static/images/util_plots/util-evacuate-grandma.svg'/>"
-                                    if 'injured man' in self._recent_victim:
-                                        image_name = "<img src='/static/images/util_plots/util-evacuate-man.svg'/>"
-                                    if 'injured woman' in self._recent_victim:
-                                        image_name = "<img src='/static/images/util_plots/util-evacuate-woman.svg'/>"
-                                if len(self._room_victims) > 1:
-                                    image_name = "<img src='/static/images/util_plots/util-evacuate-multiple.svg'/>"
+                                image_name = "<img src='/static/images/util_plots/evacuate-final.svg'/>"
                             # allocate decision making to the human if the predicted moral sensitivity is higher than the allocation threshold
                             if self._sensitivity > self._threshold:
                                 if self._condition == 'shap':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                        exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
+                                                        exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                         This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                         + image_name, self._name)
                                 if self._condition == 'util':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                        exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me. \
-                                                        These are the positive and negative consequences of both decision options: \n \n ' \
+                                                        exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                        These are the potential positive and negative consequences of both decisions: \n ' \
                                                         + image_name, self._name)
                                 if self._condition == 'baseline':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                        exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                        exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                 # allocate to human and keep track of time to ensure enough reading time for the visual explanations
                                 self._decide = 'human'
                                 self._time = int(self._second)
@@ -1277,7 +1247,7 @@ class robot(custom_agent_brain):
                                                         We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                         <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                         is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                        These are the positive and negative consequences of both decision options: \n \n ' \
+                                                        These are the potential positive and negative consequences of both decisions: \n ' \
                                                         + image_name, self._name)
                                 if self._condition == 'baseline':
                                     self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \

@@ -434,6 +434,9 @@ class tutorial_robot(custom_agent_brain):
                                    <b>You can always intervene and reallocate decision-making to yourself or to me</b>. \
                                    For example, because you believe I should not make certain decisions. \
                                    You can reallocate decision-making to yourself with the '\"Allocate to me\"' button and to me with the '\"Allocate to robot\"' button. \n \n \
+                                   Guidelines mention that we should take sufficient time before making decisions. Therefore, I will always inform you of my decisions after <b>25 seconds</b> of consideration. \
+                                   When allocating decision-making to you, I will ask you for your decision after <b>25 seconds</b> as well. This way, you have sufficient time to consider both decision options. \
+                                   After these 25 seconds of consideration, you can no longer reallocate decision-making to yourself or to me. \n \n \
                                    Press the '\"Continue\"' button to start a short practice task where each of the 4 situations will appear.", self._name)
                 if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                     self._level = 'practice'
@@ -497,14 +500,14 @@ class tutorial_robot(custom_agent_brain):
                         self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to a defensive deployment. \
                                             <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                         
                     if self._tactic == 'defensive':
                         self._deploy_time = self._defensive_deployment_time
                         self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
                                             We should decide whether to continue with this deployment, or switch to an offensive deployment. \
                                             <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -718,7 +721,7 @@ class tutorial_robot(custom_agent_brain):
                 if self._sensitivity > 4.1:
                     self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
                                         or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                        (<b>' + str(self._sensitivity) + '</b>) exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                        (<b>' + str(self._sensitivity) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                     # allocate decision making to human and keep track of time to ensure enough reading time for the explanations
                     self._decide = 'human'
                     self._plot_times.append(self._time_left - self._resistance)
@@ -1003,7 +1006,7 @@ class tutorial_robot(custom_agent_brain):
                                         self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                             We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                             <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                            exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                         # allocate to human and keep track of time to ensure enough reading time of the explanation
                                         self._decide = 'human'
                                         self._time = int(self._second)
@@ -1048,7 +1051,7 @@ class tutorial_robot(custom_agent_brain):
                                 self._send_message('I have found ' + str(self._room_victims) + ' in the burning office ' + self._door['room_name'].split()[-1] + '. \
                                                     We should decide whether to first extinguish the fire, or evacuate the ' + self._vic_string + '. \
                                                     <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(self._sensitivity) + '</b>) \
-                                                    exceeds my allocation threshold. Take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                                                    exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
                                 # allocate to human and keep track of time to ensure enough reading time for the visual explanations
                                 self._decide = 'human'
                                 self._time = int(self._second)
