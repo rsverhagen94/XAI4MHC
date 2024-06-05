@@ -184,7 +184,7 @@ class firefighter(custom_agent_brain):
             for msg in self.received_messages_content:
                 if 'Evacuating the victims in office 05 first' in msg and msg not in self._processed_messages:
                     self._processed_messages.append(msg)
-                    return RemoveObject.__name__, {'object_id': 'fire_5', 'remove_range': 100}
+                    return RemoveObject.__name__, {'object_id': 'fire_05', 'remove_range': 100}
         if agent_name == 'fire_fighter_1' and self.received_messages_content and 'Evacuating the victim in office 13 first' in self.received_messages_content[-1] and self._task == 1:
             if (16,22) not in self._added:
                 self._added.append((16,22))
