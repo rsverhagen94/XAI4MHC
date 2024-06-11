@@ -123,6 +123,7 @@ class robot(custom_agent_brain):
         return state
 
     def decide_on_bw4t_action(self, state:State):
+        print(self._defensive_search_rounds)
         print(self._phase)
         self._current_location = state[self.agent_id]['location']
         
@@ -979,16 +980,15 @@ class robot(custom_agent_brain):
                         self._offensive_search_rounds += 1
                         #self._send_message('Going to re-explore all offices to rescue victims.', self._name)
                     if self._tactic == 'defensive':
+                        self._defensive_search_rounds += 1
                         self._searched_rooms_defensive = []
                         if self._door['room_name'] not in self._searched_rooms_defensive:
                             self._searched_rooms_defensive.append(self._door['room_name'])
                         if self._temperature_cat != 'higher' or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires and self._defensive_search_rounds > 1 or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) != self._no_fires:
                             self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
                             self._tactic = 'offensive'
-                            self._defensive_search_rounds += 1
                         if self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires and self._defensive_search_rounds < 2:
                             self._send_message('Going to re-explore all offices to see if any extinguished fires have flared up again.', self._name)
-                            self._defensive_search_rounds += 1
                     self._send_messages = []
                     self._fire_locations = {}
                     self.received_messages = []
