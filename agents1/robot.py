@@ -123,7 +123,6 @@ class robot(custom_agent_brain):
         return state
 
     def decide_on_bw4t_action(self, state:State):
-        print(self._defensive_search_rounds)
         print(self._phase)
         self._current_location = state[self.agent_id]['location']
         
@@ -972,6 +971,9 @@ class robot(custom_agent_brain):
                     and room['room_name'] not in self._searched_rooms_defensive]
                 # reset some variables and start re-searching if all rooms have been explored
                 if self._remaining_zones and len(unsearched_rooms) == 0:
+                    self._send_messages = []
+                    self.received_messages = []
+                    self.received_messages_content = []
                     if self._tactic == 'offensive':
                         self._searched_rooms_offensive = []
                         self._lost_victims = []
@@ -989,10 +991,7 @@ class robot(custom_agent_brain):
                             self._tactic = 'offensive'
                         if self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires and self._defensive_search_rounds < 2:
                             self._send_message('Going to re-explore all offices to see if any extinguished fires have flared up again.', self._name)
-                    self._send_messages = []
                     self._fire_locations = {}
-                    self.received_messages = []
-                    self.received_messages_content = []
                     self._phase = Phase.FIND_NEXT_GOAL
                 # otherwise determine the closest unexplored room to search next based on location and distance to rooms
                 else:
