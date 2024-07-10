@@ -1338,6 +1338,8 @@ class robot(custom_agent_brain):
                             # determine what to do next when fire fighter had to abort rescuing because it was too dangerous
                             if self.received_messages_content and 'ABORTING' in self.received_messages_content[-1]:
                                 self._lost_victims.append(self._recent_victim)
+                                self._goal_victim = None
+                                self._goal_location = None
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 if self._door['room_name'] not in self._searched_rooms_defensive:
@@ -1349,6 +1351,8 @@ class robot(custom_agent_brain):
                             if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
                                 self._send_message('Not sending in a fire fighter to rescue ' + self._recent_victim + '.', self._name)
                                 self._lost_victims.append(self._recent_victim)
+                                self._goal_victim = None
+                                self._goal_location = None
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 if self._door['room_name'] not in self._searched_rooms_defensive:
@@ -1407,6 +1411,8 @@ class robot(custom_agent_brain):
                             # determine what to do next when fire fighters aborted rescue task because conditions were too dangerous
                             if self.received_messages_content and 'ABORTING' in self.received_messages_content[-1]:
                                 self._lost_victims.append(self._recent_victim)
+                                self._goal_victim = None
+                                self._goal_location = None
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 if self._door['room_name'] not in self._searched_rooms_defensive:
@@ -1419,6 +1425,8 @@ class robot(custom_agent_brain):
                             if self._temperature_cat == 'higher' and not self._decided:
                                 self._send_message("Not sending in a fire fighter to rescue " + self._recent_victim + " because the temperature is higher than the safety threshold.", self._name)
                                 self._lost_victims.append(self._recent_victim)
+                                self._goal_victim = None
+                                self._goal_location = None
                                 if self._door['room_name'] not in self._searched_rooms_offensive:
                                     self._searched_rooms_offensive.append(self._door['room_name'])
                                 if self._door['room_name'] not in self._searched_rooms_defensive:
