@@ -387,7 +387,7 @@ class tutorial_robot(custom_agent_brain):
                                    This value will count down to 0 minutes, which will automatically end the tasks. \n \
                                    2) <img src='/static/images/celsius_transparent.svg' width=56/> <b>temperature</b>: can be <b>lower (<)</b>, <b>close to (<≈)</b>, or <b>higher (>)</b> than the safety threshold. \n \
                                    This value will change depending on the fire duration and extinguished fires. \n \
-                                   3) <img src='/static/images/victim_transparent.svg' width=25/> <b>victims</b>: the total number can known beforehand (<b>0/3</b>) but also unknown (<b>0/?</b>). \n \
+                                   3) <img src='/static/images/victim_transparent.svg' width=25/> <b>victims</b>: the total number can be known beforehand (<b>0/3</b>) but also unknown (<b>0/?</b>). \n \
                                    Tasks will automatically end when all victims are rescued. \n \
                                    4) <img src='/static/images/smoke_transparent.svg' width=69/> <b>smoke</b>: can spread at a <b>slow</b>, <b>normal</b>, or <b>fast</b> pace, but is unknown at start. \n \
                                    This value will be updated when we find fire and smoke. \n \

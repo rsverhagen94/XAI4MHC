@@ -156,7 +156,7 @@ def create_builder(id, exp_version, name, condition, task, counterbalance_condit
         builder.add_object((3,2), 'fire 01', FireObject, visualize_shape = 'img', img_name = "/images/fire2.svg", visualize_size = 1.25, smoke = 'fast', is_traversable = True, is_movable = True)
         builder.add_object((8,10), 'source 04', FireObject, visualize_shape = 'img', img_name = "/images/source-final.svg", visualize_size = 2, smoke = 'fast', is_traversable = True, is_movable = True)
         builder.add_object(location = (8,9), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 1.75)
-        builder.add_object(location = (8,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 5) 
+        builder.add_object(location = (8,7), name = 'smog', callable_class = SmokeObject, visualize_shape = 'img', img_name = "/images/smoke.svg", visualize_size = 5)
 
     # Create the goal
     if exp_version == "experiment":
