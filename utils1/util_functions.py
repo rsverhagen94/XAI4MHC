@@ -3,7 +3,7 @@ from rpy2 import robjects
     
 def R_to_Py_plot_priority(people, smoke, location, image_name):
     r_script = (f'''
-                data <- read_excel("/home/ruben/Downloads/moral sensitivity survey data 4.xlsx")
+                data <- read_excel("data/moral_sensitivity_survey_data.xlsx")
                 data$situation <- as.factor(data$situation)
                 data$location <- as.factor(data$location)
                 data$smoke <- as.factor(data$smoke)
@@ -35,9 +35,9 @@ def R_to_Py_plot_priority(people, smoke, location, image_name):
                     loc <- '?'
                 }}
                 labels <- c(none = "<br> baseline <br> moral <br> sensitivity", 
-                smoke = paste("<img src='/home/ruben/xai4mhc/Icons/smoke_speed_black.png' width='53' /><br>\n", new_data$smoke), 
-                location = paste("<img src='/home/ruben/xai4mhc/Icons/location_fire_black.png' width='35' /><br>\n", loc), 
-                people = paste("<img src='/home/ruben/xai4mhc/Icons/victims.png' width='19' /><br>\n", new_data$people))
+                smoke = paste("<img src='images/smoke_speed_black.png' width='53' /><br>\n", new_data$smoke), 
+                location = paste("<img src='images/location_fire_black.png' width='35' /><br>\n", loc), 
+                people = paste("<img src='images/victims.png' width='19' /><br>\n", new_data$people))
                 idx <- 1
                 original_rank <- data_plot$rank[idx]
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
@@ -90,7 +90,7 @@ def R_to_Py_plot_priority(people, smoke, location, image_name):
 
 def R_to_Py_plot_tactic(people, location, resistance, image_name):
     r_script = (f'''
-                data <- read_excel("/home/ruben/Downloads/moral sensitivity survey data 4.xlsx")
+                data <- read_excel("data/moral_sensitivity_survey_data.xlsx")
                 data$situation <- as.factor(data$situation)
                 data$location <- as.factor(data$location)
                 data_subset <- subset(data, data$situation=="5"|data$situation=="7")
@@ -123,9 +123,9 @@ def R_to_Py_plot_tactic(people, location, resistance, image_name):
                     loc <- '?'
                 }}
                 labels <- c(none = "<br> baseline <br> moral <br> sensitivity", 
-                resistance = paste("<img src='/home/ruben/xai4mhc/Icons/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
-                location = paste("<img src='/home/ruben/xai4mhc/Icons/location_fire_black.png' width='35' /><br>\n", loc), 
-                people = paste("<img src='/home/ruben/xai4mhc/Icons/victims.png' width='19' /><br>\n", new_data$people))
+                resistance = paste("<img src='images/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
+                location = paste("<img src='images/location_fire_black.png' width='35' /><br>\n", loc), 
+                people = paste("<img src='images/victims.png' width='19' /><br>\n", new_data$people))
                 idx <- 1
                 original_rank <- data_plot$rank[idx]
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
@@ -179,7 +179,7 @@ def R_to_Py_plot_tactic(people, location, resistance, image_name):
     
 def R_to_Py_plot_locate(people, resistance, temperature, image_name):
     r_script = (f'''
-                data <- read_excel("/home/ruben/Downloads/moral sensitivity survey data 4.xlsx")
+                data <- read_excel("data/moral_sensitivity_survey_data.xlsx")
                 data$situation <- as.factor(data$situation)
                 data$temperature <- as.factor(data$temperature)
                 data_subset <- subset(data, data$situation=="2"|data$situation=="4")
@@ -216,9 +216,9 @@ def R_to_Py_plot_locate(people, resistance, temperature, image_name):
                     temp <- '&gt; thresh.'
                 }}
                 labels <- c(none = "<br> baseline <br> moral <br> sensitivity", 
-                resistance = paste("<img src='/home/ruben/xai4mhc/Icons/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
-                temperature = paste("<img src='/home/ruben/xai4mhc/Icons/celsius_transparent.png' width='43' /><br>\n", temp), 
-                people = paste("<img src='/home/ruben/xai4mhc/Icons/victims.png' width='19' /><br>\n", new_data$people))
+                resistance = paste("<img src='images/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
+                temperature = paste("<img src='images/celsius_transparent.png' width='43' /><br>\n", temp), 
+                people = paste("<img src='images/victims.png' width='19' /><br>\n", new_data$people))
                 idx <- 1
                 original_rank <- data_plot$rank[idx]
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
@@ -271,7 +271,7 @@ def R_to_Py_plot_locate(people, resistance, temperature, image_name):
 
 def R_to_Py_plot_rescue(resistance, temperature, distance, image_name):
     r_script = (f'''
-                data <- read_excel("/home/ruben/Downloads/moral sensitivity survey data 4.xlsx")
+                data <- read_excel("data/moral_sensitivity_survey_data.xlsx")
                 data$situation <- as.factor(data$situation)
                 data$temperature <- as.factor(data$temperature)
                 data$distance <- as.factor(data$distance)
@@ -309,9 +309,9 @@ def R_to_Py_plot_rescue(resistance, temperature, distance, image_name):
                     temp <- '&gt; thresh.'
                 }}
                 labels <- c(none = "<br> baseline <br> moral <br> sensitivity", 
-                resistance = paste("<img src='/home/ruben/xai4mhc/Icons/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
-                temperature = paste("<img src='/home/ruben/xai4mhc/Icons/celsius_transparent.png' width='43' /><br>\n", temp), 
-                distance = paste("<img src='/home/ruben/xai4mhc/Icons/distance_fire_victim_black.png' width='54' /><br>\n", new_data$distance))
+                resistance = paste("<img src='images/fire_resistance_black.png' width='38' /><br>\n", new_data$resistance, min), 
+                temperature = paste("<img src='images/celsius_transparent.png' width='43' /><br>\n", temp), 
+                distance = paste("<img src='images/distance_fire_victim_black.png' width='54' /><br>\n", new_data$distance))
                 idx <- 1
                 original_rank <- data_plot$rank[idx]
                 data_plot$rank[data_plot$rank < original_rank] <- data_plot$rank[data_plot$rank < original_rank] + 1
@@ -364,19 +364,16 @@ def R_to_Py_plot_rescue(resistance, temperature, distance, image_name):
     
 # move to utils file and call once when running main.py
 def load_R_to_Py():
-    r_script = (f'''
+    r_script = ('''
+                
                 # Load libraries
                 library('readxl')
                 library('ggplot2')
                 library('dplyr')
-                library('rstatix')
-                library('ggpubr')
-                library('tidyverse')
                 library("gvlma")
-                library('lme4')
                 library('shapr')
                 library('ggtext')
-                library('ggdist')
+                library('tidyr')
                 ''')
     robjects.r(r_script)
     

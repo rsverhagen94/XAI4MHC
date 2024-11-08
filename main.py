@@ -3,6 +3,7 @@ import sys
 import csv
 import glob
 import pathlib
+import threading
 from custom_gui import visualization_server
 from worlds1.world_builder import create_builder
 from utils1.util_functions import load_R_to_Py
@@ -10,10 +11,11 @@ from pathlib import Path
 
 if __name__ == "__main__":
     print("\nEnter the participant ID:")
-    id = input()
+    id = os.getenv('PARTICIPANT_ID', '1')
     print("\nEnter one of the environments 'trial' or 'experiment':")
-    environment = input()
-    if environment == 'trial':
+    environment = os.getenv('ENVIRONMENT_TYPE', 'trial')
+    print(environment)
+    if environment == "trial":
         media_folder = pathlib.Path().resolve()
         print("Starting custom visualizer")
         vis_thread = visualization_server.run_matrx_visualizer(verbose = False, media_folder = media_folder)
@@ -25,10 +27,10 @@ if __name__ == "__main__":
         world.run(builder.api_info)
     else:
         print("\nEnter one of the conditions 'baseline', 'shap', or 'util':")
-        condition = input()
+        condition = os.getenv('CONDITION', 'baseline')
         if condition == 'shap' or condition == 'util' or condition == 'baseline':
             print("\nEnter one of the 8 counterbalancing conditions:")
-            counterbalance_condition = input()
+            counterbalance_condition = os.getenv('COUNTERBALANCE_CONDITION', '1')
             if counterbalance_condition == '1' or counterbalance_condition == '2':
                 robot_order = ['Brutus', 'Titus']
                 task_order = [1, 2]
@@ -44,6 +46,7 @@ if __name__ == "__main__":
 
             start_scenario = None
             media_folder = pathlib.Path().resolve()
+            print(media_folder)
             print("Starting custom visualizer")
             vis_thread = visualization_server.run_matrx_visualizer(verbose = False, media_folder = media_folder)
 
@@ -61,6 +64,7 @@ if __name__ == "__main__":
                     print(fld)
                     recent_dir = max(glob.glob(os.path.join(fld, '*/counterbalance_' + counterbalance_condition + '/' + id + '/')), key = os.path.getmtime)
                     recent_dir = max(glob.glob(os.path.join(recent_dir, '*/')), key = os.path.getmtime)
+                    print(recent_dir)
                     action_file = glob.glob(os.path.join(recent_dir, 'world_1/action*'))[0]
                     message_file = glob.glob(os.path.join(recent_dir, 'world_1/message*'))[0]
                     action_header = []

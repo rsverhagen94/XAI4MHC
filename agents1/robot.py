@@ -488,7 +488,7 @@ class robot(custom_agent_brain):
             if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys() and self._phase != Phase.LOCATE:
                 self._situations.append(self._situation)
                 # determine the image name of the visual explanation
-                image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
+                image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
                 # calculate the predicted sensitivity for this situation
                 self._sensitivity = R_to_Py_plot_tactic(self._total_victims_cat, self._location_cat, self._resistance, image_name)
                 self._plot_generated = True
@@ -803,7 +803,7 @@ class robot(custom_agent_brain):
             #    self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 4 and not self._waiting:
                 self._situations.append('locate')
                 # determine the correct image name to show in the visual explanation
-                image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
+                image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
                 # calculate the predicted moral sensitivity for this situation
                 self._sensitivity = R_to_Py_plot_locate(self._total_victims_cat, self._resistance, self._temperature_cat, image_name)
                 self._plot_generated = True
@@ -1126,7 +1126,7 @@ class robot(custom_agent_brain):
                                     return AddObject.__name__, action_kwargs
                                 if 'critical' in vic and not self._plot_generated and vic not in self._lost_victims:
                                     # determine which visual explanation to show when a critically injured victim is found
-                                    image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_for_vic_" \
+                                    image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" \
                                         + vic.replace(' ', '_') + str(self._offensive_search_rounds) + ".svg"
                                     # calculate the Euclidean distance between the victim and the fire source
                                     distance = calculate_distances(self._fire_source_coords, self._victim_locations[vic]['location'])
@@ -1214,7 +1214,7 @@ class robot(custom_agent_brain):
                     for vic in self._room_victims:
                         # determine which visual explanation to show for the situation evacuate mildly injured victims immediately or extinguish first
                         if 'mild' in self._recent_victim and not self._plot_generated:
-                            image_name = "/home/ruben/xai4mhc/TUD-Research-Project-2022/custom_gui/static/images/sensitivity_plots/plot_for_vic_" + vic.replace(' ', '_') + ".svg"
+                            image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" + vic.replace(' ', '_') + ".svg"
                             # calculate the predicted moral sensitivity for this situation
                             self._sensitivity = R_to_Py_plot_priority(len(self._room_victims), self._smoke, self._location_cat, image_name)
                             self._plot_generated = True
