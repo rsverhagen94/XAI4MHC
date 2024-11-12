@@ -13,7 +13,7 @@ from matrx.actions.object_actions import GrabObject, DropObject, RemoveObject
 from matrx.actions.move_actions import MoveNorth
 from matrx.messages.message import Message
 from matrx.messages.message_manager import MessageManager
-from actions1.custom_actions import RemoveObjectTogether, CarryObjectTogether, DropObjectTogether, CarryObject, Drop
+from actions1.custom_actions import CarryObject, Drop
 
 class Phase(enum.Enum):
     WAIT_FOR_CALL = 1,

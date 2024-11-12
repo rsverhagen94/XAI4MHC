@@ -12,11 +12,11 @@ from matrx.agents.agent_utils.state import State
 from matrx.agents.agent_utils.navigator import Navigator
 from matrx.agents.agent_utils.state_tracker import StateTracker
 from matrx.actions.door_actions import OpenDoorAction
-from matrx.actions.object_actions import GrabObject, DropObject, RemoveObject
+from matrx.actions.object_actions import GrabObject, RemoveObject
 from matrx.actions.move_actions import MoveNorth
 from matrx.messages.message import Message
 from matrx.messages.message_manager import MessageManager
-from actions1.custom_actions import Backup, RemoveObjectTogether, CarryObjectTogether, DropObjectTogether, CarryObject, Drop, Injured, AddObject
+from actions1.custom_actions import CarryObject, Drop, AddObject
 
 class Phase(enum.Enum):
     # define possible phases
@@ -106,7 +106,7 @@ class robot(custom_agent_brain):
         # load all required R libraries that will be launched from within Python
         load_R_to_Py()
 
-    def filter_bw4t_observations(self, state):
+    def filter_agent_observations(self, state):
         # calculate the number of seconds passed
         self._second = state['World']['tick_duration'] * state['World']['nr_ticks']
         # if 6 seconds passed, resistance to collapse decreases with 1 minute
@@ -122,10 +122,8 @@ class robot(custom_agent_brain):
         self._send_message('Time left: ' + str(self._resistance) + '.', self._name)
         return state
 
-    def decide_on_bw4t_action(self, state:State):
-        print(self._phase)
+    def decide_on_agent_action(self, state:State):
         self._current_location = state[self.agent_id]['location']
-        
         # determine the combination of robot name and allocation threshold depending on counterbalancing condition
         conservative_brutus = ['2', '3', '6', '7']
         radical_brutus = ['1', '4', '5', '8']
@@ -143,7 +141,6 @@ class robot(custom_agent_brain):
         self._tick = state['World']['nr_ticks']
         self._send_message('Current tick is ' + str(self._tick), self._name)
         self._send_message('Counterbalancing condition ' + self._counterbalance_condition + ' name ' + self._name + ' threshold ' + str(self._threshold), self._name)
-
         # inspect the state and save important information such as location of area tiles, fires, fire source, smoke, and speed of smoke spread
         for info in state.values():
             if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'spread fire' in info['name'] and self._current_location in self._office_doors.keys():
@@ -198,7 +195,6 @@ class robot(custom_agent_brain):
                         if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in office ' + msg.split()[4] in info['name']:
                             if info['location'] not in self._fire_locations.values() and 'office ' + info['name'].split()[-1] not in self._fire_locations.keys():
                                 self._fire_locations['office ' + info['name'].split()[-1]] = info['location']
-
         # check which offices fire fighters explored and add to memory
         if self.received_messages_content:
             for msg in self.received_messages_content:
@@ -207,26 +203,22 @@ class robot(custom_agent_brain):
                     if office not in self._searched_rooms_offensive:
                         self._searched_rooms_offensive.append(office)
                         self._processed_messages.append(msg)
-            
         if self.received_messages_content and 'ABORTING' in self.received_messages_content[-1] and 'ABORTING' in self.received_messages_content[-2]:
             self._searched_rooms_offensive.remove(self.received_messages_content[-1].strip('.').split()[-2] + ' ' + self.received_messages_content[-1].strip('.').split()[-1])
             self._searched_rooms_offensive.remove(self.received_messages_content[-2].strip('.').split()[-2] + ' ' + self.received_messages_content[-2].strip('.').split()[-1])
             self.received_messages_content = [msg for msg in self.received_messages_content if 'ABORTING' not in msg]
-
         # determine the categorical values for the fire source location
         if self._location == '?':
             self._location_cat = 'unknown'
         if self._location == 'found':
             self._location_cat = 'known'
-
         # reset distance feature to unknown once the robot leaves an office
         if self._current_location not in self._room_tiles:
             self._distance = '?'
-
         # keep track of the times at which visual explanations have been generated
         if self._time_left - self._resistance not in self._plot_times:
             self._plot_generated = False
-        
+        # determine the temperature based on number of extinguished fires and resistance to collapse
         if len(self._extinguished_fire_locations) / self._no_fires != 1 and self._resistance <= 50:
             self._temperature = '>'
             self._temperature_cat = 'higher'
@@ -239,19 +231,158 @@ class robot(custom_agent_brain):
         if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance > 50:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
-        #if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance <= 25 and self._no_fires == 8:
-        #    self._temperature = '<≈'
-        #    self._temperature_cat = 'close'
         if len(self._extinguished_fire_locations) / self._no_fires > 0.8 and self._resistance <= 25:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
+        # determine at which times the switch tactis situations are presented
+        if self._time_left - self._resistance >= 40 and self._time_left - self._resistance <= 45 and 'switch 1' not in self._situations:
+            self._situation = 'switch 1'
+        if self._time_left - self._resistance >= 60 and self._time_left - self._resistance <= 65 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims:
+            self._situation = 'switch 2'
+        if self._time_left - self._resistance >= 80 and self._time_left - self._resistance <= 85 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims:
+            self._situation = 'switch 3'
+        if self._time_left - self._resistance >= 100 and self._time_left - self._resistance <= 105 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims:
+            self._situation = 'switch 4'
+        # present the switch tactics situation once the robot leaves an office
+        if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys() and self._phase != Phase.LOCATE:
+            self._situations.append(self._situation)
+            # determine the image name of the visual explanation
+            image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
+            # calculate the predicted sensitivity for this situation
+            self._sensitivity = R_to_Py_plot_tactic(self._total_victims_cat, self._location_cat, self._resistance, image_name)
+            self._plot_generated = True
+            # determine exact image name depending on explanation condition
+            if self._condition == 'shap':
+                image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
+            if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Brutus':
+                image_name = "<img src='/static/images/util_plots/defensive-continue-brutus-final.svg'/>"
+            if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Brutus':
+                image_name = "<img src='/static/images/util_plots/offensive-continue-brutus-final.svg'/>"
+            if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Titus':
+                image_name = "<img src='/static/images/util_plots/defensive-continue-titus-final.svg'/>"
+            if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Titus':
+                image_name = "<img src='/static/images/util_plots/offensive-continue-titus-final.svg'/>"
+            # allocate decision making to human because the predicted sensitivity is higher than the allocation threshold
+            if self._sensitivity > self._threshold:
+                # send correct messages depending on current deployment tactic and explanation condition
+                if self._tactic == 'offensive':
+                    self._deploy_time = self._offensive_deployment_time
+                    if self._defensive_search_rounds == 0:
+                        explanation = '.'
+                    if self._defensive_search_rounds > 0:
+                        explanation = ' to extinguish fires that might have flared up again.'
+                    if self._condition == 'shap':
+                        self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                            We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                            This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                            + image_name, self._name)
+                    if self._condition == 'util':
+                        self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                            We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                            These are the potential positive and negative consequences of both decisions: \n ' \
+                                            + image_name, self._name)
+                    if self._condition == 'baseline':
+                        self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                            We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                            <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                            exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                        
+                    if self._tactic == 'defensive':
+                        self._deploy_time = self._defensive_deployment_time
+                        if self._condition == 'shap':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'util':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'baseline':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                    # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
+                    self._decide = 'human'
+                    self._plot_times.append(self._time_left - self._resistance)
+                    self._last_phase = self._phase
+                    self._time = int(self._second)
+                    self._phase = Phase.TACTIC
+                    return Idle.__name__, {'action_duration': 0}
+                
+                # allocate decision making to robot because the predicted sensitivity is lower than or equal to the allocation threshold
+                if self._sensitivity <= self._threshold:
+                    # send correct messages depending on current deployment tactic and explanation condition
+                    if self._tactic == 'offensive':
+                        self._deploy_time = self._offensive_deployment_time
+                        if self._defensive_search_rounds == 0:
+                            explanation = '.'
+                        if self._defensive_search_rounds > 0:
+                            explanation = ' to extinguish fires that might have flared up again.'
+                        if self._condition == 'shap':
+                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'util':
+                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'baseline':
+                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
 
+                    if self._tactic == 'defensive':
+                        self._deploy_time = self._defensive_deployment_time
+                        if self._condition == 'shap':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'util':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                                These are the potential positive and negative consequences of both decisions: \n ' \
+                                                + image_name, self._name)
+                        if self._condition == 'baseline':
+                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
+                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
+                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
+                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
+                    # allocate decision making to robot and keep track of time to ensure enough reading time of explanations 
+                    self._decide = self._name
+                    self._plot_times.append(self._time_left - self._resistance)
+                    self._last_phase = self._phase
+                    self._time = int(self._second)
+                    self._phase = Phase.TACTIC
+                    return Idle.__name__, {'action_duration': 0}
+        
         # send hidden messages used for GUI/display with icons
         self._send_message('Smoke spreads: ' + self._smoke + '.', self._name)
         self._send_message('Temperature: ' + self._temperature + '.', self._name)
         self._send_message('Location: ' + self._location + '.', self._name)
         self._send_message('Distance: ' + self._distance + '.', self._name)
-
         # infinite loop until task is completed
         while True:
             # phase used to determine the next goal victim to rescue
@@ -356,8 +487,10 @@ class robot(custom_agent_brain):
                         self._send_message('Hello, my name is ' + self._name + '. Together we will try to search and rescue all victims in this burning office building. \
                                             <b>Our goal is not to rescue as many victims as fast as possible, but rather to achieve the best ouctomes for both victims and fire fighters</b>. \
                                             For this task, the total number of victims in the building is ' + str(self._total_victims) + '. If you are ready to begin the task, press the "Continue" button.', self._name)
+                # remain idle until participants presses continue button to start task
                 if self.received_messages_content and self.received_messages_content[-1] != 'Continue' and not self._started or not self.received_messages_content and not self._started:
                     return None, {}
+                # robot starts mission when participant presses continue button
                 if self.received_messages_content and self.received_messages_content[-1] == 'Continue' or self._started:
                     self._started = True
                     closest_distance = float('inf')
@@ -379,6 +512,7 @@ class robot(custom_agent_brain):
                                     closest_distance = distance
                                     closest_office = self._victim_locations[vic]['room']
                                     goal_victim = vic
+                    # plan path to room when the next goal victim is critically injured
                     if closest_office is not None and self._goal_victim and 'critical' in self._goal_victim:
                         self._door = state.get_room_doors(closest_office)[0]
                         self._doormat = state.get_room(closest_office)[-1]['doormat']
@@ -390,7 +524,7 @@ class robot(custom_agent_brain):
                         closest_office = None
                         closest_distance = float('inf')
                         for office, loc in self._fire_locations.items():
-                            if loc not in self._extinguished_fire_locations:# and not any(info['room'] == office for info in self._victim_locations.values()):
+                            if loc not in self._extinguished_fire_locations:
                                 distance = calculate_distances(loc, self._current_location)
                                 if distance < closest_distance:
                                     closest_distance = distance
@@ -421,6 +555,7 @@ class robot(custom_agent_brain):
                             self._id = info['obj_id']
                             self._fire_location = info['location']
                             self._waiting = True
+                            # change robot icon to an extinguishing icon
                             if self._name == 'Brutus':
                                 self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                             if self._name == 'Titus':
@@ -442,6 +577,7 @@ class robot(custom_agent_brain):
                     # keep track of which fires are extinguished
                     if self._fire_location not in self._extinguished_fire_locations:
                         self._extinguished_fire_locations.append(self._fire_location)
+                    # switch back to original robot icon after fire is extinguished
                     if self._name == 'Brutus':
                         self.agent_properties["img_name"] = "/images/robot-final4.svg"
                     if self._name == 'Titus':
@@ -452,174 +588,7 @@ class robot(custom_agent_brain):
                 # otherwise remain idle
                 else:
                     return None, {}
-
-            # determine at which times the switch tactics situations occur
-            #if self._task == 1:
-                # mildly injured elderly  woman2 in office 13
-            #    if self._current_location == (25,17) and 'switch 1' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-            #        self._situation = 'switch 1'
-                # mildly injured elderly man in office 9
-            #    if self._current_location == (25,13) and 'switch 2' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-            #        self._situation = 'switch 2'
-                # mildly injured elderly man2 in office 3
-            #    if self._current_location == (25,12) and 'switch 3' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-            #        self._situation = 'switch 3'
-                # mildly injured man in office 1
-            #    if self._current_location == (25,10) and 'switch 4' not in self._situations and not self._evacuating and self._phase != Phase.FOLLOW_PATH_TO_ROOM:
-            #        self._situation = 'switch 4'
-                
-            #    if self._current_location == (5,12) and 'switch 5' not in self._situations:
-            #        self._situation = 'switch 5'
-
-            if self._time_left - self._resistance >= 40 and self._time_left - self._resistance <= 45 and 'switch 1' not in self._situations:
-                self._situation = 'switch 1'
-            if self._time_left - self._resistance >= 60 and self._time_left - self._resistance <= 65 and 'switch 2' not in self._situations and len(self._found_victims) != self._total_victims:
-                self._situation = 'switch 2'
-            if self._time_left - self._resistance >= 80 and self._time_left - self._resistance <= 85 and 'switch 3' not in self._situations and len(self._found_victims) != self._total_victims:
-                self._situation = 'switch 3'
-            if self._time_left - self._resistance >= 100 and self._time_left - self._resistance <= 105 and 'switch 4' not in self._situations and len(self._found_victims) != self._total_victims:
-                self._situation = 'switch 4'
-            #if self._task == 1 and self._time_left - self._resistance >= 120 and self._time_left - self._resistance <= 125 and 'switch 5' not in self._situations and len(self._found_victims) != self._total_victims and len(self._searched_rooms_offensive) != 14:
-            #    self._situation = 'switch 5'
-            #if self._time_left - self._resistance >= 126 and self._time_left - self._resistance <= 136 and 'switch 6' not in self._situations and len(self._found_victims) != self._total_victims:
-            #    self._situation = 'switch 6'
-
-            # present the switch tactics situation once the robot leaves an office
-            if self._current_location not in self._room_tiles and not self._plot_generated and self._situation != None and self._situation not in self._situations and not self._waiting and self._current_location not in self._office_doors.keys() and self._phase != Phase.LOCATE:
-                self._situations.append(self._situation)
-                # determine the image name of the visual explanation
-                image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
-                # calculate the predicted sensitivity for this situation
-                self._sensitivity = R_to_Py_plot_tactic(self._total_victims_cat, self._location_cat, self._resistance, image_name)
-                self._plot_generated = True
-                # determine exact image name depending on explanation condition
-                if self._condition == 'shap':
-                    image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
-                if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Brutus':
-                    image_name = "<img src='/static/images/util_plots/defensive-continue-brutus-final.svg'/>"
-                if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Brutus':
-                    image_name = "<img src='/static/images/util_plots/offensive-continue-brutus-final.svg'/>"
-                if self._condition == 'util' and self._tactic == 'defensive' and self._name == 'Titus':
-                    image_name = "<img src='/static/images/util_plots/defensive-continue-titus-final.svg'/>"
-                if self._condition == 'util' and self._tactic == 'offensive' and self._name == 'Titus':
-                    image_name = "<img src='/static/images/util_plots/offensive-continue-titus-final.svg'/>"
-
-                # allocate decision making to human because the predicted sensitivity is higher than the allocation threshold
-                if self._sensitivity > self._threshold:
-                    # send correct messages depending on current deployment tactic and explanation condition
-                    if self._tactic == 'offensive':
-                        self._deploy_time = self._offensive_deployment_time
-                        if self._defensive_search_rounds == 0:
-                            explanation = '.'
-                        if self._defensive_search_rounds > 0:
-                            explanation = ' to extinguish fires that might have flared up again.'
-                        if self._condition == 'shap':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'util':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                                These are the potential positive and negative consequences of both decisions: \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'baseline':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
-                        
-                    if self._tactic == 'defensive':
-                        self._deploy_time = self._defensive_deployment_time
-                        if self._condition == 'shap':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'util':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                                These are the potential positive and negative consequences of both decisions: \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'baseline':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
-                    # allocate decision making to human and keep track of time to ensure enough reading time of explanations    
-                    self._decide = 'human'
-                    self._plot_times.append(self._time_left - self._resistance)
-                    self._last_phase = self._phase
-                    self._time = int(self._second)
-                    self._phase = Phase.TACTIC
-                    return Idle.__name__, {'action_duration': 0}
-                
-                # allocate decision making to robot because the predicted sensitivity is lower than or equal to the allocation threshold
-                if self._sensitivity <= self._threshold:
-                    # send correct messages depending on current deployment tactic and explanation condition
-                    if self._tactic == 'offensive':
-                        self._deploy_time = self._offensive_deployment_time
-                        if self._defensive_search_rounds == 0:
-                            explanation = '.'
-                        if self._defensive_search_rounds > 0:
-                            explanation = ' to extinguish fires that might have flared up again.'
-                        if self._condition == 'shap':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'util':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                These are the potential positive and negative consequences of both decisions: \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'baseline':
-                            self._send_message('Our offensive deployment has been going on for ' + str(self._offensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to a defensive deployment' + explanation + ' \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
-
-                    if self._tactic == 'defensive':
-                        self._deploy_time = self._defensive_deployment_time
-                        if self._condition == 'shap':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'util':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                                These are the potential positive and negative consequences of both decisions: \n ' \
-                                                + image_name, self._name)
-                        if self._condition == 'baseline':
-                            self._send_message('Our defensive deployment has been going on for ' + str(self._defensive_deployment_time) + ' minutes now. \
-                                                We should decide whether to continue with this deployment, or switch to an offensive deployment. \
-                                                <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
-                                                is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
-                    # allocate decision making to robot and keep track of time to ensure enough reading time of explanations 
-                    self._decide = self._name
-                    self._plot_times.append(self._time_left - self._resistance)
-                    self._last_phase = self._phase
-                    self._time = int(self._second)
-                    self._phase = Phase.TACTIC
-                    return Idle.__name__, {'action_duration': 0}
-
+            # CONTINUE HERE
             # decision making phase for the situation continue or switch deployment tactic
             if Phase.TACTIC == self._phase:
                 if self._decide == 'human' and self._tactic == 'offensive':

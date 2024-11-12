@@ -1,5 +1,4 @@
 from abc import  ABC, abstractmethod
-from actions1.custom_actions import RemoveObjectTogether
 from matrx.agents.agent_utils.state import State
 from brains1.agent_brain import agent_brain
 
@@ -31,7 +30,7 @@ class custom_agent_brain(agent_brain, ABC):
         '''
         Final . Agents must override decide_on_bw4t_action instead
         '''
-        act,params = self.decide_on_bw4t_action(state)
+        act,params = self.decide_on_agent_action(state)
         params['grab_range'] = 1
         params['max_objects'] = 1
 
@@ -39,12 +38,12 @@ class custom_agent_brain(agent_brain, ABC):
     
     def filter_observations(self,state:State)->State:
         '''
-        Final. Agents must override filter_bw4t_observations.
+        Final. Agents must override filter_agent_observations.
         This to ensure that agents can not by-pass imposed percept filtering.
         '''
-        return self.filter_bw4t_observations(state)
+        return self.filter_agent_observations(state)
         
-    def filter_bw4t_observations(self,state)->State:
+    def filter_agent_observations(self,state)->State:
         """ 
         Filters the world state before deciding on an action.
         This function is called every tick, so use this for message processing.
@@ -100,7 +99,7 @@ class custom_agent_brain(agent_brain, ABC):
         return state
     
     @abstractmethod
-    def decide_on_bw4t_action(self, state:State):
+    def decide_on_agent_action(self, state:State):
         '''
         @param state
         A state description as given by the agent's
@@ -130,7 +129,7 @@ class custom_agent_brain(agent_brain, ABC):
         
         This function is called only when the agent can take an action.
         Actions that need execution every tick should be placed in
-        filter_bw4t_observations.
+        filter_agent_observations.
         '''
         pass
     

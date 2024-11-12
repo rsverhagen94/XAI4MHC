@@ -16,7 +16,7 @@ from matrx.actions.object_actions import GrabObject, DropObject, RemoveObject
 from matrx.actions.move_actions import MoveNorth
 from matrx.messages.message import Message
 from matrx.messages.message_manager import MessageManager
-from actions1.custom_actions import Backup, RemoveObjectTogether, CarryObjectTogether, DropObjectTogether, CarryObject, Drop, Injured, AddObject
+from actions1.custom_actions import CarryObject, Drop, AddObject
 
 class Phase(enum.Enum):
     # define possible phases

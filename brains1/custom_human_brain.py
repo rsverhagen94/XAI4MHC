@@ -10,7 +10,7 @@ import numpy as np
 
 from matrx.messages import Message
 from matrx.actions.move_actions import MoveNorth, MoveNorthEast, MoveEast, MoveSouthEast, MoveSouth, MoveSouthWest, MoveWest, MoveNorthWest
-from actions1.custom_actions import RemoveObjectTogether, Idle, CarryObject, CarryObjectTogether, DropObjectTogether, Drop, RemoveObject
+from actions1.custom_actions import Idle, CarryObject, Drop
 
 
 class custom_human_brain(HumanAgentBrain):

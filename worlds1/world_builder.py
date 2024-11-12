@@ -1,12 +1,9 @@
 import os, random, sys, itertools
 import numpy as np
 from matrx import WorldBuilder
-from matrx.actions import MoveNorth, OpenDoorAction, CloseDoorAction, GrabObject
-from matrx.actions.move_actions import MoveEast, MoveSouth, MoveWest
+from matrx.actions.move_actions import MoveEast, MoveSouth, MoveWest, MoveNorth
 from matrx.agents import AgentBrain, HumanAgentBrain, SenseCapability
 from matrx.grid_world import GridWorld, AgentBody
-from actions1.custom_actions import RemoveObjectTogether, DropObject, Idle, CarryObject, Drop, CarryObjectTogether, DropObjectTogether
-from matrx.actions.object_actions import RemoveObject
 from matrx.objects import EnvObject
 from matrx.world_builder import RandomProperty
 from matrx.goals import WorldGoal
@@ -14,7 +11,6 @@ from agents1.firefighter import firefighter
 from agents1.robot import robot
 from agents1.tutorial_firefighter import tutorial_firefighter
 from agents1.tutorial_robot import tutorial_robot
-from actions1.custom_actions import RemoveObjectTogether
 from brains1.custom_human_brain import custom_human_brain
 from loggers.action_logger import action_logger
 from datetime import datetime
@@ -25,13 +21,7 @@ key_action_map = {
         'ArrowUp': MoveNorth.__name__,
         'ArrowRight': MoveEast.__name__,
         'ArrowDown': MoveSouth.__name__,
-        'ArrowLeft': MoveWest.__name__,
-        'q': CarryObject.__name__,
-        'w': Drop.__name__,
-        'd': RemoveObjectTogether.__name__,
-        'a': CarryObjectTogether.__name__,
-        's': DropObjectTogether.__name__,
-        'e': RemoveObject.__name__,
+        'ArrowLeft': MoveWest.__name__
     }
 
 def add_drop_off_zones(builder, exp_version):
