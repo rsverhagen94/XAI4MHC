@@ -378,6 +378,72 @@ class robot(custom_agent_brain):
                     self._phase = Phase.TACTIC
                     return Idle.__name__, {'action_duration': 0}
         
+        # if after 30 to 35 minutes the fire source has not been located, present situation 'send in fire fighters to locate fire source or not'
+        if self._time_left - self._resistance >= 30 and self._time_left - self._resistance <= 35 and self._location == '?' and not self._plot_generated and \
+            self._current_location not in self._room_tiles and 'locate' not in self._situations and self._current_location not in self._office_doors.keys():
+            self._situations.append('locate')
+            # determine the correct image name to show in the visual explanation
+            image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
+            # calculate the predicted moral sensitivity for this situation
+            self._sensitivity = R_to_Py_plot_locate(self._total_victims_cat, self._resistance, self._temperature_cat, image_name)
+            self._plot_generated = True
+            # determine the exact image name to show depending on explanation condition
+            if self._condition == 'shap':
+                image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
+            if self._condition == 'util':
+                image_name = "<img src='/static/images/util_plots/locate-fire-source.svg'/>"
+            # allocate decision making to human if predicted sensivitiy is higher than the allocation threshold
+            if self._sensitivity > self._threshold:
+                if self._condition == 'shap':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                        This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                        + image_name, self._name)
+                if self._condition == 'util':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
+                                        These are the potential positive and negative consequences of both decisions: \n ' \
+                                        + image_name, self._name)
+                if self._condition == 'baseline':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
+                # allocate decision making to human and keep track of time to ensure enough reading time for the explanations
+                self._decide = 'human'
+                self._plot_times.append(self._time_left - self._resistance)
+                self._last_phase = self._phase
+                self._time = int(self._second)
+                self._phase = Phase.LOCATE
+                return Idle.__name__, {'action_duration': 0}
+
+            # allocate decision making to the robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
+            if self._sensitivity <= self._threshold:
+                if self._condition == 'shap':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                        This is how much each feature contributed to the predicted sensitivity: \n \n ' \
+                                        + image_name, self._name)
+                if self._condition == 'util':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
+                                        These are the potential positive and negative consequences of both decisions: \n ' \
+                                        + image_name, self._name)
+                if self._condition == 'baseline':
+                    self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
+                                        or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
+                                        (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
+                # allocate decision making to robot and keep track of time to ensure enough reading time for visual explanations
+                self._decide = self._name
+                self._plot_times.append(self._time_left - self._resistance)
+                self._last_phase = self._phase
+                self._time = int(self._second)
+                self._phase = Phase.LOCATE
+                return Idle.__name__, {'action_duration': 0}
+        
         # send hidden messages used for GUI/display with icons
         self._send_message('Smoke spreads: ' + self._smoke + '.', self._name)
         self._send_message('Temperature: ' + self._temperature + '.', self._name)
@@ -497,21 +563,21 @@ class robot(custom_agent_brain):
                     closest_office = None
                     goal_victim = None
                     # determine the next goal victim and location for a found victim
-                    for vic in remaining_victims:
-                        if vic in self._found_victims and vic not in self._lost_victims and self._tactic != 'defensive':
-                            self._goal_victim = vic
-                            self._goal_location = remaining[vic]
+                    for victim in remaining_victims:
+                        if victim in self._found_victims and victim not in self._lost_victims and self._tactic != 'defensive':
+                            self._goal_victim = victim
+                            self._goal_location = remaining[victim]
                             # directly move to a mildly injured victim to evacuate it
                             if 'mild' in self._goal_victim:
                                 self._phase = Phase.PLAN_PATH_TO_VICTIM
                                 return Idle.__name__, {'action_duration': 0}
                             # move to the area of a critically injured victim to decide again if he/she can be rescued
                             if 'critical' in self._goal_victim:
-                                distance = calculate_distances(self._victim_locations[vic]['location'], self._current_location)
+                                distance = calculate_distances(self._victim_locations[victim]['location'], self._current_location)
                                 if distance < closest_distance:
                                     closest_distance = distance
-                                    closest_office = self._victim_locations[vic]['room']
-                                    goal_victim = vic
+                                    closest_office = self._victim_locations[victim]['room']
+                                    goal_victim = victim
                     # plan path to room when the next goal victim is critically injured
                     if closest_office is not None and self._goal_victim and 'critical' in self._goal_victim:
                         self._door = state.get_room_doors(closest_office)[0]
@@ -588,7 +654,7 @@ class robot(custom_agent_brain):
                 # otherwise remain idle
                 else:
                     return None, {}
-            # CONTINUE HERE
+            
             # decision making phase for the situation continue or switch deployment tactic
             if Phase.TACTIC == self._phase:
                 if self._decide == 'human' and self._tactic == 'offensive':
@@ -604,7 +670,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = self._name
                     else:
-                        # if decision making is allocated to the human, the robot waits 15 seconds before asking the human which decision he/she wants to make
+                        # if decision making is allocated to the human, the robot waits 25 seconds before asking the human which decision he/she wants to make
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -630,9 +696,10 @@ class robot(custom_agent_brain):
                                     self._phase = self._last_phase
                                 if not self._evacuating:
                                     self._phase = Phase.FIND_NEXT_GOAL
+                            # remain idle until human has made a decision
                             else:
                                 return None, {}
-                        # remain idle until human has made a decision
+                        # remain idle until robot waited 25 seconds
                         else:
                             return None, {}
                 
@@ -649,7 +716,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = self._name
                     else:
-                        # if decision making is allocated to the human, the robot waits 15 seconds before asking the human which decision he/she wants to make
+                        # if decision making is allocated to the human, the robot waits 25 seconds before asking the human which decision he/she wants to make
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -673,9 +740,10 @@ class robot(custom_agent_brain):
                                 self._waiting = False
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
+                            # remain idle until human has made a decision
                             else:
                                 return None, {}
-                        # remain idle until human has made a decision
+                        # remain idle until robot waited 25 seconds
                         else:
                             return None, {}
 
@@ -689,7 +757,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = 'human'
                     else:
-                        # if decision making is allocated to the robot, it waits 15 seconds before telling the human its decision
+                        # if decision making is allocated to the robot, it waits 25 seconds before telling the human its decision
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -714,7 +782,7 @@ class robot(custom_agent_brain):
                                 self._decide = None
                                 self._reallocated = False
                                 self._phase = self._last_phase
-                        # remain idle until robot made its decision
+                        # remain idle until robot made its decision after 25 seconds
                         else:
                             return None, {}
 
@@ -728,7 +796,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = 'human'
                     else:
-                        # if decision making is allocated to the robot, it waits 15 seconds before telling the human its decision
+                        # if decision making is allocated to the robot, it waits 25 seconds before telling the human its decision
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -750,88 +818,12 @@ class robot(custom_agent_brain):
                                 self._decide = None
                                 self._reallocated = False
                                 self._phase = Phase.FIND_NEXT_GOAL
-                        # remain idle until robot made its decision
+                        # remain idle until robot made its decision after 25 seconds
                         else:
                             return None, {}
                 # remain idle if any unforeseen situations occur, preventing the game to get stuck
                 else:
                     return None, {}
-
-            # if between 15 and 25 minutes the fire source has not been located, present situation 'send in fire fighters to locate fire source or not'
-            if self._time_left - self._resistance >= 30 and self._time_left - self._resistance <= 35 and self._location == '?' and not self._plot_generated and \
-                self._current_location not in self._room_tiles and 'locate' not in self._situations and self._current_location not in self._office_doors.keys():
-
-            # mildly injured woman in office 13
-            #if self._task == 1 and self._current_location == (25,14) and not self._evacuating and 'locate' not in self._situations and self._location == '?' and not self._plot_generated and self._phase != Phase.FOLLOW_PATH_TO_ROOM and self._phase != Phase.LOCATE:
-
-            #if self._time_left - self._resistance >= 36 and self._time_left - self._resistance <= 41 and self._location == '?' and not self._plot_generated and \
-            #    self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 1 and not self._waiting or \
-            #   self._time_left - self._resistance >= 16 and self._time_left - self._resistance <= 21 and self._location == '?' and not self._plot_generated and \
-            #    self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task != 1 and self._task != 4 and not self._waiting or \
-            #   self._time_left - self._resistance >= 26 and self._time_left - self._resistance <= 31 and self._location == '?' and not self._plot_generated and \
-            #    self._current_location not in self._room_tiles and 'locate' not in self._situations and self._task == 4 and not self._waiting:
-                self._situations.append('locate')
-                # determine the correct image name to show in the visual explanation
-                image_name = "custom_gui/static/images/sensitivity_plots/plot_at_time_" + str(self._resistance) + ".svg"
-                # calculate the predicted moral sensitivity for this situation
-                self._sensitivity = R_to_Py_plot_locate(self._total_victims_cat, self._resistance, self._temperature_cat, image_name)
-                self._plot_generated = True
-                # determine the exact image name to show depending on explanation condition
-                if self._condition == 'shap':
-                    image_name = "<img src='/static/images" + image_name.split('/static/images')[-1] + "' />"
-                if self._condition == 'util':
-                    image_name = "<img src='/static/images/util_plots/locate-fire-source.svg'/>"
-                # allocate decision making to human if predicted sensivitiy is higher than the allocation threshold
-                if self._sensitivity > self._threshold:
-                    if self._condition == 'shap':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                            This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                            + image_name, self._name)
-                    if self._condition == 'util':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
-                                            These are the potential positive and negative consequences of both decisions: \n ' \
-                                            + image_name, self._name)
-                    if self._condition == 'baseline':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>Please make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
-                    # allocate decision making to human and keep track of time to ensure enough reading time for the explanations
-                    self._decide = 'human'
-                    self._plot_times.append(self._time_left - self._resistance)
-                    self._last_phase = self._phase
-                    self._time = int(self._second)
-                    self._phase = Phase.LOCATE
-                    return Idle.__name__, {'action_duration': 0}
-
-                # allocate decision making to the robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
-                if self._sensitivity <= self._threshold:
-                    if self._condition == 'shap':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                            This is how much each feature contributed to the predicted sensitivity: \n \n ' \
-                                            + image_name, self._name)
-                    if self._condition == 'util':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself. \
-                                            These are the potential positive and negative consequences of both decisions: \n ' \
-                                            + image_name, self._name)
-                    if self._condition == 'baseline':
-                        self._send_message('The fire source still has not been located. We should decide whether to send in fire fighters to locate the fire source, \
-                                            or if this is too dangerous. <b>I will make this decision</b> as the predicted moral sensitivity \
-                                            (<b>' + str(abs(self._sensitivity)) + '</b>) is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
-                    # allocate decision making to robot and keep track of time to ensure enough reading time for visual explanations
-                    self._decide = self._name
-                    self._plot_times.append(self._time_left - self._resistance)
-                    self._last_phase = self._phase
-                    self._time = int(self._second)
-                    self._phase = Phase.LOCATE
-                    return Idle.__name__, {'action_duration': 0}
 
             # decision making phase for the situation send in fire fighters to locate fire source or not
             if Phase.LOCATE == self._phase:
@@ -847,7 +839,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = self._name
                     else:
-                        # robot waits 15 seconds before asking human to make a decision to ensure enough reading time
+                        # robot waits 25 seconds before asking human to make a decision to ensure enough reading time
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -890,7 +882,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = 'human'
                     else:
-                        # wait 15 seconds before robot tells human its decision to ensure enough reading time of explanation
+                        # wait 25 seconds before robot tells human its decision to ensure enough reading time of explanation
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -949,7 +941,6 @@ class robot(custom_agent_brain):
                         if self._door['room_name'] not in self._searched_rooms_offensive:
                             self._searched_rooms_offensive.append(self._door['room_name'])
                         self._offensive_search_rounds += 1
-                        #self._send_message('Going to re-explore all offices to rescue victims.', self._name)
                     if self._tactic == 'defensive':
                         self._defensive_search_rounds += 1
                         self._searched_rooms_defensive = []
@@ -967,14 +958,14 @@ class robot(custom_agent_brain):
                     if self._current_door == None:
                         self._door = state.get_room_doors(self._get_closest_room(state, unsearched_rooms, agent_location))[0]
                         self._doormat = state.get_room(self._get_closest_room(state, unsearched_rooms, agent_location))[-1]['doormat']
-                        # weird bug fix where robot does not correctly navigate to office 1
+                        # weird bug fix where robot does not correctly navigate to office 1 without hardcoding the entrance
                         if self._door['room_name'] == 'office 01':
                             self._doormat = (2,4)
                         self._phase = Phase.PLAN_PATH_TO_ROOM
                     if self._current_door != None:
                         self._door = state.get_room_doors(self._get_closest_room(state, unsearched_rooms, self._current_door))[0]
                         self._doormat = state.get_room(self._get_closest_room(state, unsearched_rooms, self._current_door))[-1]['doormat']
-                        # weird bug fix where robot does not correctly navigate to office 1
+                        # weird bug fix where robot does not correctly navigate to office 1 without hardcoding the entrance
                         if self._door['room_name'] == 'office 01':
                             self._doormat = (2,4)
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -982,11 +973,11 @@ class robot(custom_agent_brain):
             # phase for planning the path to the next room to explore
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
-                # weird bug fix where robot does not correctly navigate to office 1
+                # weird bug fix where robot does not correctly navigate to office 1 without hardcoding the entrance
                 if self._door['room_name'] == 'office 01':
                     self._doormat = (2,4)
                 doorLoc = self._doormat
-                # keep track of which room we are currently exploring/moving to
+                # keep track of which room the team is currently exploring/moving to
                 self._current_room = self._door['room_name']
                 self._navigator.add_waypoints([doorLoc])
                 self._phase = Phase.FOLLOW_PATH_TO_ROOM
@@ -1083,22 +1074,22 @@ class robot(custom_agent_brain):
                     # keep track of which victims are found in the room            
                     for info in state.values():
                         if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
-                            vic = str(info['img_name'][8:-4])
-                            if vic not in self._room_victims:
-                                self._room_victims.append(vic)
-                            if 'healthy' not in vic:
-                                self._recent_victim = vic
-                                if vic not in self._found_victims:
-                                    self._found_victims.append(vic)
-                                    self._victim_locations[vic] = {'location': info['location'], 'room': self._door['room_name'], 'obj_id': info['obj_id']}
-                                    action_kwargs = add_object([info['location']], info['img_name'], 0.9, 1, vic + ' pinned', True, True)
+                            victim = str(info['img_name'][8:-4])
+                            if victim not in self._room_victims:
+                                self._room_victims.append(victim)
+                            if 'healthy' not in victim:
+                                self._recent_victim = victim
+                                if victim not in self._found_victims:
+                                    self._found_victims.append(victim)
+                                    self._victim_locations[victim] = {'location': info['location'], 'room': self._door['room_name'], 'obj_id': info['obj_id']}
+                                    action_kwargs = add_object([info['location']], info['img_name'], 0.9, 1, victim + ' pinned', True, True)
                                     return AddObject.__name__, action_kwargs
-                                if 'critical' in vic and not self._plot_generated and vic not in self._lost_victims:
+                                if 'critical' in victim and not self._plot_generated and victim not in self._lost_victims:
                                     # determine which visual explanation to show when a critically injured victim is found
                                     image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" \
-                                        + vic.replace(' ', '_') + str(self._offensive_search_rounds) + ".svg"
+                                        + victim.replace(' ', '_') + str(self._offensive_search_rounds) + ".svg"
                                     # calculate the Euclidean distance between the victim and the fire source
-                                    distance = calculate_distances(self._fire_source_coords, self._victim_locations[vic]['location'])
+                                    distance = calculate_distances(self._fire_source_coords, self._victim_locations[victim]['location'])
                                     # turn the distance into a category 'small' or 'large'
                                     if distance < 8.4:
                                         self._distance = 'small'
@@ -1120,21 +1111,21 @@ class robot(custom_agent_brain):
                                     # allocate decision making to the human if the predicted moral sensitivity is higher than the allocation threshold
                                     if self._sensitivity > self._threshold:
                                         if self._condition == 'shap':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'util':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me. \
                                                                 These are the potential positive and negative consequences of both decisions: \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'baseline':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>Please make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 exceeds my allocation threshold. I will ask for your decision after 25 seconds, but you can take as much time as you need. However, you can also reallocate the decision to me.', self._name)
@@ -1147,21 +1138,21 @@ class robot(custom_agent_brain):
                                     # allocate to robot if the predicted moral sensitivity is lower than or equal to the allocation threshold
                                     if self._sensitivity <= self._threshold:
                                         if self._condition == 'shap':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                                 This is how much each feature contributed to the predicted sensitivity: \n \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'util':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself. \
                                                                 These are the potential positive and negative consequences of both decisions: \n ' \
                                                                 + image_name, self._name)
                                         if self._condition == 'baseline':
-                                            self._send_message('I have found ' + vic + ' in office ' + self._door['room_name'].split()[-1] + '. \
+                                            self._send_message('I have found ' + victim + ' in office ' + self._door['room_name'].split()[-1] + '. \
                                                                 We should decide whether to send in a fire fighter to rescue the victim, or if this is too dangerous. \
                                                                 <b>I will make this decision</b> as the predicted moral sensitivity (<b>' + str(abs(self._sensitivity)) + '</b>) \
                                                                 is below my allocation threshold. However, you can also reallocate the decision to yourself.', self._name)
@@ -1180,10 +1171,10 @@ class robot(custom_agent_brain):
                         self._vic_string = 'victim'
                     if len(self._room_victims) > 1:
                         self._vic_string = 'victims'
-                    for vic in self._room_victims:
+                    for victim in self._room_victims:
                         # determine which visual explanation to show for the situation evacuate mildly injured victims immediately or extinguish first
                         if 'mild' in self._recent_victim and not self._plot_generated:
-                            image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" + vic.replace(' ', '_') + ".svg"
+                            image_name = "custom_gui/static/images/sensitivity_plots/plot_for_vic_" + victim.replace(' ', '_') + ".svg"
                             # calculate the predicted moral sensitivity for this situation
                             self._sensitivity = R_to_Py_plot_priority(len(self._room_victims), self._smoke, self._location_cat, image_name)
                             self._plot_generated = True
@@ -1269,7 +1260,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = self._name
                     else:
-                        # otherwise wait 15 seconds to ensure enough reading time of task allocation and explanation
+                        # otherwise wait 25 seconds to ensure enough reading time of task allocation and explanation
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -1346,7 +1337,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = 'human'
                     else:
-                        # otherwise wait 15 seconds before communicating which decision the robot made
+                        # otherwise wait 25 seconds before communicating which decision the robot made
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -1427,7 +1418,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = self._name
                     else:
-                        # otherwise wait 15 seconds to ensure enough reading time of allocation and explanation before asking human what to decide
+                        # otherwise wait 25 seconds to ensure enough reading time of allocation and explanation before asking human what to decide
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -1451,10 +1442,9 @@ class robot(custom_agent_brain):
                             # already remove fire object pinned on map while waiting
                             if self._decided_time and int(self._second) < self._decided_time + 5:
                                 for info in state.values():
-                                    #if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in' in info['name']:
                                     if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                         return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
-                            # wait 5 seconds before removing the object/extinguishing the fire because MATRX's action duration did not work
+                            # wait 5 seconds before removing the object/extinguishing the fire because MATRX's action duration did not work properly
                             if self._decided_time and int(self._second) >= self._decided_time + 5 and self._id and state[{'obj_id': self._id}]:
                                 if self._name == 'Brutus':
                                     self.agent_properties["img_name"] = "/images/robot-final4.svg"
@@ -1492,7 +1482,7 @@ class robot(custom_agent_brain):
                         self._interventions += 1
                         self._decide = 'human'
                     else:
-                        # otherwise wait 15 seconds before making a decision to ensure enough reading time of task allocation and explanation
+                        # otherwise wait 25 seconds before making a decision to ensure enough reading time of task allocation and explanation
                         if int(self._second) >= self._time + 25:
                             if not self._reallocated:
                                 # send hidden message used for logging purposes
@@ -1523,7 +1513,6 @@ class robot(custom_agent_brain):
                                 # already remove fire object pinned on map while waiting
                                 if self._decided_time and int(self._second) < self._decided_time + 5:
                                     for info in state.values():
-                                        #if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'fire in' in info['name']:
                                         if 'name' in info and 'fire in office ' + self._door['room_name'].split()[-1] == info['name']:
                                             return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5, 'action_duration': 0}
                                 # remove object/extinguish fire after 5 seconds of waiting time
@@ -1572,6 +1561,7 @@ class robot(custom_agent_brain):
                     return action, {}
                 if action == None:
                     for info in state.values():
+                        # remove the pinned icon from the map when evacuating a mildly injured victim
                         if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and self._goal_victim in info['name'] and 'pinned' in info['name']:
                             self._phase = Phase.TAKE_VICTIM
                             return RemoveObject.__name__, {'object_id': info['obj_id'], 'remove_range': 5}
@@ -1610,36 +1600,29 @@ class robot(custom_agent_brain):
                 self._phase = Phase.FIND_NEXT_GOAL
                 return Drop.__name__, {}
 
-    def _get_closest_room(self, state, objs, currentDoor):
-        '''
-        @return the closest room to explore next
-        '''
+    def _get_closest_room(self, state, rooms, current_door):
+        ''' return the closest room to explore next '''
         agent_location = state[self.agent_id]['location']
-        locs = {}
-        for obj in objs:
-            locs[obj] = state.get_room_doors(obj)[0]['location']
-        dists = {}
-        for room, loc in locs.items():
-            if currentDoor != None:
-                dists[room] = utils.get_distance(currentDoor, loc)
-            if currentDoor == None:
-                dists[room] = utils.get_distance(agent_location, loc)
-        return min(dists, key = dists.get)
+        locations = {}
+        for room in rooms:
+            locations[room] = state.get_room_doors(room)[0]['location']
+        distances = {}
+        for room, location in locations.items():
+            if current_door != None:
+                distances[room] = utils.get_distance(current_door, location)
+            if current_door == None:
+                distances[room] = utils.get_distance(agent_location, location)
+        return min(distances, key = distances.get)
     
-    def _send_message(self, mssg, sender):
-        '''
-        send message and keep track of which messages have been send
-        '''
-        msg = Message(content = mssg, from_id = sender)
-        if msg.content not in self.received_messages_content:
-            self.send_message(msg)
-            self._send_messages.append(msg.content)
+    def _send_message(self, message_content, sender):
+        ''' send message and keep track of which messages have been send '''
+        message = Message(content = message_content, from_id = sender)
+        if message.content not in self.received_messages_content:
+            self.send_message(message)
+            self._send_messages.append(message.content)
 
     def _get_drop_zones(self, state):
-        '''
-        @return list of drop zones (their full dict), in order (the first one is the
-        the place that requires the first drop)
-        '''
+        ''' return list of drop zones (their full dict), in order (the first one is the place that requires the first drop) '''
         places = state[{'is_goal_block': True}]
         places.sort(key = lambda info:info['location'][1])
         zones = []
