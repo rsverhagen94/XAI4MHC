@@ -437,15 +437,7 @@ function add_message(chatroom_ID, mssg) {
     else {
         mssg_content = JSON.stringify(mssg.content);
     }
-    /*
-    const img = document.createElement("img");
-    img.src = "/static/images/critically injured girl.svg";
-    document.body.appendChild(img);
-    document.getElementById("messages").innerHTML = mssg_content;
-    div.appendChild(document.createTextNode(mssg_content));
-    */
-    
-    
+    // replace some content of messages such as text by icons    
     mssg_content = mssg_content.replaceAll("]","");
     mssg_content = mssg_content.replaceAll("[","");
     mssg_content = mssg_content.replaceAll("'","");
@@ -454,11 +446,7 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("']",""); 
     mssg_content = mssg_content.replaceAll("\n","<br>");
     mssg_content = mssg_content.replaceAll("toxic", "<img src='/static/images/toxic.svg' height= 30 width=30/>");
-    //mssg_content = mssg_content.replaceAll("Iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
-    //mssg_content = mssg_content.replaceAll("iron debris", "<img src='/static/images/girder.svg' height= 30 width=30/>");
-    //mssg_content = mssg_content.replaceAll("fire fighter", "<img src='/static/images/rescue-man-final3.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("explosion", "<img src='/static/images/explosion-danger.svg' height= 30 width=30/>");
-    //mssg_content = mssg_content.replaceAll("fire", "<img src='/static/images/fire2.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("Pinned", "<img src='/static/images/location-pin.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("by myself", "<img src='/static/images/robot-final4.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("with help", "<img src='/static/images/robot-man-extinguish.svg' height= 55 width=55/>");
@@ -470,7 +458,6 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("healthy cat", "<img src='/static/images/healthy%20cat.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy elderly man", "<img src='/static/images/healthy%20elderly%20man.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy elderly woman", "<img src='/static/images/healthy%20elderly%20woman.svg' height= 30 width=30/>");
-    
     mssg_content = mssg_content.replaceAll("critically injured girl", "<img src='/static/images/critically injured girl.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("critically injured boy", "<img src='/static/images/critically injured boy.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("critically injured man", "<img src='/static/images/critically injured man.svg' height= 30 width=30/>");
@@ -504,7 +491,6 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("mildly injured man3", "<img src='/static/images/mildly injured man.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("mildly injured dog", "<img src='/static/images/mildly injured dog.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("mildly injured cat", "<img src='/static/images/mildly injured cat.svg' height= 30 width=30/>");
-
     mssg_content = mssg_content.replaceAll("Critically injured girl", "<img src='/static/images/critically injured girl.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("Critically injured boy", "<img src='/static/images/critically injured boy.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("Critically injured man", "<img src='/static/images/critically injured man.svg' height= 30 width=30/>");
@@ -521,7 +507,6 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("Mildly injured cat", "<img src='/static/images/mildly injured cat.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("Mildly injured elderly man", "<img src='/static/images/mildly injured elderly man.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("Mildly injured elderly woman", "<img src='/static/images/mildly injured elderly woman.svg' height= 30 width=30/>");
-
     mssg_content = mssg_content.replaceAll("healthy girl", "<img src='/static/images/healthy girl.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy boy", "<img src='/static/images/healthy boy.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy man", "<img src='/static/images/healthy man.svg' height= 30 width=30/>");
@@ -530,96 +515,77 @@ function add_message(chatroom_ID, mssg) {
     mssg_content = mssg_content.replaceAll("healthy cat", "<img src='/static/images/healthy cat.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy elderly man", "<img src='/static/images/healthy elderly man.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("healthy elderly woman", "<img src='/static/images/healthy elderly woman.svg' height= 30 width=30/>");
-
     mssg_content = mssg_content.replaceAll("rock", "<img src='/static/images/stone.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("stones", "<img src='/static/images/stone-small.svg' height= 30 width=30/>");
     mssg_content = mssg_content.replaceAll("tree", "<img src='/static/images/tree-fallen2.svg' height= 30 width=30/>");
-
     mssg_content = mssg_content.replaceAll("ABORTING TASK!", "<span style='font-weight:bold; color:red;'>ABORTING TASK!</span>");
     mssg_content = mssg_content.replace(/ has been going on for (\d+)\s+minutes now/g, " has been going on for a while");
     mssg_content = mssg_content.replace(/ deployment going on for (\d+)\s+minutes now/g, " deployment");
     mssg_content = mssg_content.replace(/ that has been going on for (\d+)\s+minutes/g, "");
     mssg_content = mssg_content.replace(/ after the defensive deployment of (\d+)\s+minutes/g, "");
     mssg_content = mssg_content.replace(/ after the offensive deployment of (\d+)\s+minutes/g, "");
-
-
-
-    // mssg_content = mssg_content.replaceAll("plot", "<img src='/static/images/sensitivity_plot.svg' />");
-
-
+    // automatically pause task after 600 and 1200 ticks passed
     if (mssg_content.includes("Current tick is")) {
         var tick = Number(mssg_content.split(/[, ]+/).pop());
         if (tick == 600 || tick == 1200) {
             toggle_pause();
     }}
-
+    // generate resistance to collapse icon on dashboard display
     if (mssg_content.includes("Time left:")) {
         function resistance() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newTime = 'Time left: ' + text + ' minutes';
-            document.getElementById('resistance').innerHTML = newTime;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_time = 'Time left: ' + text + ' minutes';
+            document.getElementById('resistance').innerHTML = new_time;
             document.getElementById('resistance').innerHTML = `<img src='/static/images/fire_resistance_transparent.svg' width=50/> ${text} minutes`;
         }
         resistance();
     }
-
+    // generate victims rescued icon on dashboard display
     if (mssg_content.includes("Victims rescued:")) {
         function victims() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newVics = 'Victims rescued: ' + text;
-            document.getElementById('victims').innerHTML = newVics;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_victims = 'Victims rescued: ' + text;
+            document.getElementById('victims').innerHTML = new_victims;
             document.getElementById('victims').innerHTML = `<img src='/static/images/victim_transparent.svg' width=25/> ${text} safe`;
         }
         victims();
     }
-
+    // generate smoke spreading icon on dashboard display
     if (mssg_content.includes("Smoke spreads:")) {
         function smoke() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newSmoke = 'Smoke spreads: ' + text;
-            document.getElementById('smoke').innerHTML = newSmoke;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_smoke = 'Smoke spreads: ' + text;
+            document.getElementById('smoke').innerHTML = new_smoke;
             document.getElementById('smoke').innerHTML = `<img src='/static/images/smoke_transparent.svg' width=69/> ${text}`;
         }
         smoke();
     }
-
+    // generate temperature icon on dashboard display
     if (mssg_content.includes("Temperature:")) {
         function temperature() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newTemp = 'Temperature: ' + text;
-            document.getElementById('temperature').innerHTML = newTemp;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_temperature = 'Temperature: ' + text;
+            document.getElementById('temperature').innerHTML = new_temperature;
             document.getElementById('temperature').innerHTML = `<img src='/static/images/celsius_transparent.svg' width=56/> ${text} threshold`;
         }
         temperature();
     }
-
+    // generate fire source location icon on dashboard display
     if (mssg_content.includes("Location:")) {
         function location() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newLoc = 'Location: ' + text;
-            document.getElementById('location').innerHTML = newLoc;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_location = 'Location: ' + text;
+            document.getElementById('location').innerHTML = new_location;
             document.getElementById('location').innerHTML = `<img src='/static/images/location_transparent.svg' width=44/> ${text}`;
         }
         location();
     }
-
+    // generate distance between victim and fire source icon on dashboard display
     if (mssg_content.includes("Distance:")) {
         function distance() {
             const text = mssg_content.split(".").join("").split(" ").at(-1);
-            const newDist = 'Distance: ' + text;
-            document.getElementById('distance').innerHTML = newDist;
-    
-            // Assuming you have an <h6> element with id="fireResistance"
+            const new_distance = 'Distance: ' + text;
+            document.getElementById('distance').innerHTML = new_distance;
             document.getElementById('distance').innerHTML = `<img src='/static/images/distance_transparent.svg' width=70/> ${text}`;
         }
         distance();
@@ -652,7 +618,6 @@ function add_message(chatroom_ID, mssg) {
     mssgs_container.appendChild(div);
     
     // scroll to the new message
-//    scrollSmoothToBottom(mssgs_container)
     handleScrollAfterImageLoad(div, mssgs_container);   
 }
 }

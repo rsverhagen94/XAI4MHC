@@ -247,17 +247,6 @@ function request_new_frame() {
 
     // method 1
     window.requestAnimationFrame(world_loop);
-
-    // method 2
-    //    var elapsed_time = Date.now() - lv_timestamp;
-    //    var wait = lv_msPerFrame - elapsed_time;
-    //    if ( wait < 0 ) {
-    //        wait = 0;
-    //    }
-    //    console.log("Elapsed time:", elapsed_time, " wait:", wait);
-
-    // draw next frame in x milliseconds to achieve 60fps
-    //    setTimeout(world_loop, wait);
 }
 
 

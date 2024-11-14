@@ -1,8 +1,8 @@
 from matrx.logger.logger import GridWorldLogger
 from matrx.grid_world import GridWorld
 
-
 class action_logger(GridWorldLogger):
+    """ logs all executed actions for both robots, their locations, and task completeness during each tick of the task """
 
     def __init__(self, save_path="", file_name_prefix="", file_extension=".csv", delimiter=";"):
         super().__init__(save_path=save_path, file_name=file_name_prefix, file_extension=file_extension,

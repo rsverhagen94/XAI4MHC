@@ -9,7 +9,7 @@
   #location,
   #distance {
       display: inline-block;
-      margin-right: 8px; /* Adjust the margin as needed for spacing */
+      margin-right: 8px;
   }
 </style>
 
@@ -68,12 +68,12 @@
       <div class="collapse" id="chat">
           <div class="container-fluid">
           </br>
-              <h6 id="resistance"><img src='/static/images/fire_resistance_transparent.svg' width=50/> <b>res:</b> 90 min.</h6>
-              <h6 id="victims"> <img src='/static/images/victim_transparent.svg' width=25/> <b>vic:</b> 4/6</h6>
-              <h6 id="smoke"><img src='/static/images/smoke_transparent.svg' width=69/> <b>smk:</b> normal</h6>
-              <h6 id="temperature"><img src='/static/images/celsius_transparent.svg' width=56/> <b>temp:</b> <= limit</h6>
-              <h6 id="location"><img src='/static/images/location_transparent.svg' width=44/> <b>src:</b> found</h6>
-              <h6 id="distance"><img src='/static/images/distance_transparent.svg' width=70/> <b>dist:</b> large</h6>
+            <h6 id="resistance"><img src='/static/images/fire_resistance_transparent.svg' width=50/></h6>   
+            <h6 id="temperature"><img src='/static/images/celsius_transparent.svg' width=56/></h6>
+            <h6 id="victims"> <img src='/static/images/victim_transparent.svg' width=25/></h6>
+            <h6 id="smoke"><img src='/static/images/smoke_transparent.svg' width=69/></h6>
+            <h6 id="location"><img src='/static/images/location_transparent.svg' width=44/></h6>
+            <h6 id="distance"><img src='/static/images/distance_transparent.svg' width=70/></h6>
               <div class="row">
                 <div class="col-md-3" id="chatrooms_list" style="display:none">
                   <div id="new_chat_dropdown" class="dropdown-menu"></div>
@@ -82,16 +82,10 @@
                       <hr style="border-top: 2px solid black;">
                       <div id="messages">
                       </div>
-                      <button type="button" id="chat_form_submit" class="btn btn-primary" onclick="my_send_message_function('Extinguish')">Extinguish</button>
-                      <button type="button" id="chat_form_submit" class="btn btn-primary" onclick="my_send_message_function('Remove')">Remove</button>
                       <button type="button" id="chat_form_submit" class="btn btn-primary" onclick="my_send_message_function('Continue')">Continue</button>
-                      <button type="button" id="chat_form_submit" class="btn btn-primary" onclick="my_send_message_function('Fire fighter')">Fire fighter</button>
                       </div>
                     </div>
-
-
-                  </div>
-                  <!--button type="button" id="collect_button" class="btn btn-primary" style="margin-bottom: .2em">Collected:</button-->                          
+                  </div>                      
               </div>
           </div>
       </div>

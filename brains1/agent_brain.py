@@ -204,24 +204,6 @@ class agent_brain(AgentBrain):
         for learning agents.
         """
 
-        # send a random message once in a while
-        #if self.rnd_gen.random() < 0.1:
-            # Get all agents in our state.
-            # The codeline below can return three things:
-            # - None                    -> no agents found (impossible as we are in an agent right now)
-            # - an agent object         -> only a single agent found
-            # - a list of agent objects -> multiple agents found
-            # Also see for state usage:
-            # https://github.com/matrx-software/matrx/blob/master/matrx/cases/bw4t/bw4t_agents.py
-            #agents = state[{"isAgent": True}]
-
-            # If we found multiple agents, randomly select the ID of one of them or otherwise the ID of the only agent
-            #to_id = self.rnd_gen.choice(agents)['obj_id'] if isinstance(agents, list) else agents['obj_id']
-
-            #self.send_message(Message(content=f"Hello, my name is (agent) {self.agent_name} and I sent this message at "
-            #                                  f"tick {state['World']['nr_ticks']}",
-            #                          from_id=self.agent_id,
-            #                          to_id=to_id))
         # Select a random action
         if self.action_set:
             action = self.rnd_gen.choice(self.action_set)
@@ -363,11 +345,9 @@ class agent_brain(AgentBrain):
         action_result = self.__callback_is_action_possible(self.agent_id, action, action_kwargs)
 
         return action_result.succeeded, action_result
-
     @property
     def state(self):
         return self._state
-
     @state.setter
     def state(self, new_state):
 
@@ -624,7 +604,6 @@ class agent_brain(AgentBrain):
     def _init_state(self):
         self._state = State(memorize_for_ticks=self.memorize_for_ticks,
                             own_id=self.agent_id)
-
     @staticmethod
     def __check_message(mssg, this_agent_id):
         if not isinstance(mssg, Message):

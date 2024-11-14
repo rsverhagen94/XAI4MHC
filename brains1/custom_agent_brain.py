@@ -1,22 +1,13 @@
-from abc import  ABC, abstractmethod
 from matrx.agents.agent_utils.state import State
 from brains1.agent_brain import agent_brain
 
-class custom_agent_brain(agent_brain, ABC):
+class custom_agent_brain(agent_brain):
     """
-    This class is the obligatory base class for BW4T agents.
-    BW4T agents must implement decide_on_bw4t_action
+    This class is the obligatory base class for agents.
+    agents must implement decide_on_agent_action
     """
     
     def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
-        '''
-        @param slowdown an integer. Basically this sets action_duration
-        field to the given slowdown. 1 implies normal speed
-        of 1 action per tick. 3 givs 1 allowed action every 3 ticks. etc
-        Implementors of BW4TBrain are NOT ALLOWED TO CHANGE THIS VALUE.
-        This is to ensure that agents run at the required speed.
-        FIXME this is hacky. These parameters should really be private.
-        '''
         self.__name = name
         self.__condition = condition
         self.__resistance = resistance
@@ -26,24 +17,23 @@ class custom_agent_brain(agent_brain, ABC):
         self.__counterbalance_condition = counterbalance_condition
         super().__init__()
     
-    def decide_on_action(self, state:State):
+    def decide_on_action(self, state):
         '''
-        Final . Agents must override decide_on_bw4t_action instead
+        Agents must override decide_on_agent_action instead
         '''
         act,params = self.decide_on_agent_action(state)
         params['grab_range'] = 1
         params['max_objects'] = 1
-
         return act, params
     
-    def filter_observations(self,state:State)->State:
+    def filter_observations(self, state):
         '''
-        Final. Agents must override filter_agent_observations.
+        Agents must override filter_agent_observations.
         This to ensure that agents can not by-pass imposed percept filtering.
         '''
         return self.filter_agent_observations(state)
         
-    def filter_agent_observations(self,state)->State:
+    def filter_agent_observations(self, state):
         """ 
         Filters the world state before deciding on an action.
         This function is called every tick, so use this for message processing.
@@ -97,11 +87,9 @@ class custom_agent_brain(agent_brain, ABC):
 
         """
         return state
-    
-    @abstractmethod
-    def decide_on_agent_action(self, state:State):
+
+    def decide_on_agent_action(self, state):
         '''
-        @param state
         A state description as given by the agent's
         :meth:`matrx.agents.agent_brain.AgentBrain.filter_observation` method.
 

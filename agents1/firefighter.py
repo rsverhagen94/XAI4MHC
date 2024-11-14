@@ -67,13 +67,13 @@ class firefighter(custom_agent_brain):
         return state
 
     def decide_on_agent_action(self, state):
+        # keep track of own agent name
+        agent_name = state[self.agent_id]['obj_id']
         # keep track of the number of smoke plumes
         for info in state.values():
             if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'smog' in info['obj_id'] and info['visualization']['size'] == 5:
                 if info not in self._smoke_plumes:
                     self._smoke_plumes.append(info)
-        # keep track of own agent name
-        agent_name = state[self.agent_id]['obj_id']
         # add big smoke plume at office 6 if fire is not extinguished with 35 minutes left during task 1
         if self._resistance == 35 and self.received_messages_content and 'Extinguishing fire in office 06.' not in self.received_messages_content and agent_name == 'fire_fighter_1' and self._task == 1:
             if (9,7) not in self._added:
@@ -410,9 +410,9 @@ class firefighter(custom_agent_brain):
                 self._goal_victim = None
                 return Drop.__name__, {'action_duration':0}
 
-    def _send_message(self, mssg, sender):
+    def _send_message(self, message_content, sender):
         # helper function to send messages
-        msg = Message(content = mssg, from_id = sender)
-        if msg.content not in self.received_messages_content:
-            self.send_message(msg)
-            self._send_messages.append(msg.content)
+        message = Message(content = message_content, from_id = sender)
+        if message.content not in self.received_messages_content:
+            self.send_message(message)
+            self._send_messages.append(message.content)
