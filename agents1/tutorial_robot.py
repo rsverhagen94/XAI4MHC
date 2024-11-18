@@ -45,15 +45,15 @@ class Phase(enum.Enum):
     EXTINGUISH_CHECK = 22
 
 class tutorial_robot(custom_agent_brain):
-    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
-        super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
+    def __init__(self, name, condition, resistance, total_fires, victims, task, counterbalance_condition):
+        super().__init__(name, condition, resistance, total_fires, victims, task, counterbalance_condition)
         # initialize important variables
         self._phase=Phase.FIND_NEXT_GOAL
         self._name = name
         self._condition = condition
         self._resistance = resistance
         self._time_left = resistance
-        self._no_fires = no_fires
+        self._total_fires = total_fires
         self._victims = victims
         self._task = task
         self._counterbalance_condition = counterbalance_condition
@@ -148,7 +148,7 @@ class tutorial_robot(custom_agent_brain):
         for info in state.values():
             if 'class_inheritance' in info and 'AreaTile' in info['class_inheritance'] and info['location'] not in self._room_tiles:
                 self._room_tiles.append(info['location'])
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
+            if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
                 if not self._fire_source_coords:
                     self._send_message("Found fire source in " + self._current_room + "!", self._name)
                     self._fire_source_coords = info['location']
@@ -159,7 +159,7 @@ class tutorial_robot(custom_agent_brain):
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
+            if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
                 if info['location'] not in self._fire_locations.values() and self._current_room not in self._fire_locations.keys():
                     self._send_message("Found fire in " + self._current_room + ".", self._name)
                     self._fire_locations[self._current_room] = info['location']
@@ -168,7 +168,7 @@ class tutorial_robot(custom_agent_brain):
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'SmokeObject' in info['class_inheritance'] and 'smog' in info['obj_id']:
+            if 'class_inheritance' in info and 'smoke_object' in info['class_inheritance'] and 'smog' in info['obj_id']:
                 if info['location'] in self._office_doors.keys() and info['location'] not in self._potential_source_offices:
                     self._potential_source_offices.append(info['location'])
         # check if fire fighters already found the fire source or other fire and if yes save coordinates
@@ -207,13 +207,13 @@ class tutorial_robot(custom_agent_brain):
         if self._time_left - self._resistance not in self._plot_times:
             self._plot_generated = False
         # determine temperature based on the number of fires in the building and number of extinguished fires
-        if len(self._extinguished_fire_locations) / self._no_fires < 0.65:
+        if len(self._extinguished_fire_locations) / self._total_fires < 0.65:
             self._temperature = '>'
             self._temperature_cat = 'higher'
-        if len(self._extinguished_fire_locations) / self._no_fires == 1:
+        if len(self._extinguished_fire_locations) / self._total_fires == 1:
             self._temperature = '<'
             self._temperature_cat = 'lower'
-        if len(self._extinguished_fire_locations) / self._no_fires >= 0.65 and len(self._extinguished_fire_locations) / self._no_fires < 1:
+        if len(self._extinguished_fire_locations) / self._total_fires >= 0.65 and len(self._extinguished_fire_locations) / self._total_fires < 1:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
         # present the switch tactics situation 
@@ -545,8 +545,8 @@ class tutorial_robot(custom_agent_brain):
                 # we use 5 seconds waiting time before removing obstacles because MATRX's action duration is buggy
                 if not self._waiting:
                     for info in state.values():
-                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
-                            'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive':
+                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
+                            'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive':
                             self._send_message("Extinguishing fire in " + self._current_room + ".", self._name)
                             self._decided_time = int(self._second)
                             self._id = info['obj_id']
@@ -923,7 +923,7 @@ class tutorial_robot(custom_agent_brain):
                 # determine time and object id once before waiting 5 seconds to remove obstacle because action duration of MATRX did not work properly
                 if not self._waiting:
                     for info in state.values():
-                        if 'class_inheritance' in info and 'IronObject' in info['class_inheritance'] and 'iron' in info['obj_id']:
+                        if 'class_inheritance' in info and 'iron_object' in info['class_inheritance'] and 'iron' in info['obj_id']:
                             self._send_message("Removing the iron debris blocking " + str(self._door['room_name']) + ".", self._name)
                             self._decided_time = int(self._second)
                             self._id = info['obj_id']
@@ -980,7 +980,7 @@ class tutorial_robot(custom_agent_brain):
                 if action != None:       
                     # keep track of which victims are found in the room            
                     for info in state.values():
-                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                        if 'class_inheritance' in info and 'victim_object' in info['class_inheritance']:
                             victim = str(info['img_name'][8:-4])
                             if victim not in self._room_victims:
                                 self._room_victims.append(victim)
@@ -1255,7 +1255,7 @@ class tutorial_robot(custom_agent_brain):
                                 self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                                 self.agent_properties["visualize_size"] = 1.8
                                 for info in state.values():
-                                    if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+                                    if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id']:
                                         self._id = info['obj_id']
                                         self._fire_location = info['location']
                             # already remove fire object pinned on map while waiting
@@ -1320,7 +1320,7 @@ class tutorial_robot(custom_agent_brain):
                                     self.agent_properties["img_name"] = "/images/brutus-extinguish.svg"
                                     self.agent_properties["visualize_size"] = 1.8
                                     for info in state.values():
-                                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+                                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id']:
                                             self._id = info['obj_id']
                                             self._fire_location = info['location']
                                 # already remove fire object pinned on map while waiting

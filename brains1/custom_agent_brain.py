@@ -11,7 +11,7 @@ class custom_agent_brain(agent_brain):
         self.__name = name
         self.__condition = condition
         self.__resistance = resistance
-        self.__no_fires = no_fires
+        self.__total_fires = no_fires
         self.__victims = victims
         self.__task = task
         self.__counterbalance_condition = counterbalance_condition

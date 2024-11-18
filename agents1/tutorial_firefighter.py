@@ -33,13 +33,13 @@ class Phase(enum.Enum):
 
 
 class tutorial_firefighter(custom_agent_brain):
-    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
-        super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
+    def __init__(self, name, condition, resistance, total_fires, victims, task, counterbalance_condition):
+        super().__init__(name, condition, resistance, total_fires, victims, task, counterbalance_condition)
         # initialize important variables
         self._phase = Phase.WAIT_FOR_CALL
         self._resistance = resistance
         self._time_left = resistance
-        self._no_fires = no_fires
+        self._total_fires = total_fires
         self._extinguished_fires = []
         self._send_messages = []
         self._rescued = []
@@ -69,13 +69,13 @@ class tutorial_firefighter(custom_agent_brain):
         if self.received_messages_content and 'Extinguishing' in self.received_messages_content[-1] and self.received_messages_content[-1] not in self._extinguished_fires:
             self._extinguished_fires.append(self.received_messages_content[-1])
         # keep track of temperature with respect to the number of extinguished fires
-        if len(self._extinguished_fires) / self._no_fires < 0.65:
+        if len(self._extinguished_fires) / self._total_fires < 0.65:
             self._temperature = '>'
             self._temperature_cat = 'higher'
-        if len(self._extinguished_fires) / self._no_fires == 1:
+        if len(self._extinguished_fires) / self._total_fires == 1:
             self._temperature = '<'
             self._temperature_cat = 'lower'
-        if len(self._extinguished_fires) / self._no_fires >= 0.65 and len(self._extinguished_fires) / self._no_fires < 1:
+        if len(self._extinguished_fires) / self._total_fires >= 0.65 and len(self._extinguished_fires) / self._total_fires < 1:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
 
@@ -150,14 +150,14 @@ class tutorial_firefighter(custom_agent_brain):
                 if action != None:                   
                     for info in state.values():
                         # if fire source is found pin it on the map and update display that it is found
-                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._location != 'found':
+                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'source' in info['obj_id'] and self._location != 'found':
                             self._send_message('<b>Fire source</b> located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
                             action_kwargs = add_object([info['location']], "/images/source-final.svg", 2, 1, 'fire source in ' + self._area)
                             self._phase = Phase.FOLLOW_ROOM_SEARCH_PATH
                             return AddObject.__name__, action_kwargs
                         #if normal fire is found pin it on the map
-                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._location != 'found':
+                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._location != 'found':
                             self._send_message('Fire located in ' + self._area + ' and pinned on the map.', agent_name.replace('_', ' ').capitalize())
                             self._location = 'found'
                             action_kwargs = add_object([info['location']], "/images/fire2.svg", 2, 1, 'fire in ' + self._area)
@@ -206,14 +206,14 @@ class tutorial_firefighter(custom_agent_brain):
                 if self._temperature != '>' or self._temperature == '>' and self._decided == 'robot':
                     self._phase = Phase.PLAN_PATH_TO_DROPPOINT
                     for info in state.values():
-                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                        if 'class_inheritance' in info and 'victim_object' in info['class_inheritance']:
                             self._goal_victim = info['img_name'][8:-4]
                             self._send_message('Transporting ' + self._goal_victim + ' to the safe zone.', agent_name.replace('_', ' ').capitalize())
                             return CarryObject.__name__, {'object_id': info['obj_id'], 'action_duration': 0}
                 # otherwise abort task
                 else:
                     for info in state.values():
-                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                        if 'class_inheritance' in info and 'victim_object' in info['class_inheritance']:
                             self._goal_victim = info['img_name'][8:-4]
                     self._send_message('<b>ABORTING TASK!</b> The combination of temperature and amount of smoke is too dangerous for me to continue rescuing ' + self._goal_victim + '.', agent_name.replace('_', ' ').capitalize())
                     self.agent_properties["img_name"] = "/images/human-danger2.gif"

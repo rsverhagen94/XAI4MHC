@@ -42,15 +42,15 @@ class Phase(enum.Enum):
     EXTINGUISH_CHECK = 19
 
 class robot(custom_agent_brain):
-    def __init__(self, name, condition, resistance, no_fires, victims, task, counterbalance_condition):
-        super().__init__(name, condition, resistance, no_fires, victims, task, counterbalance_condition)
+    def __init__(self, name, condition, resistance, total_fires, victims, task, counterbalance_condition):
+        super().__init__(name, condition, resistance, total_fires, victims, task, counterbalance_condition)
         # initialize important variables
         self._phase=Phase.FIND_NEXT_GOAL
         self._name = name
         self._condition = condition
         self._resistance = resistance
         self._time_left = resistance
-        self._no_fires = no_fires
+        self._total_fires = total_fires
         self._victims = victims
         self._task = task
         self._counterbalance_condition = counterbalance_condition
@@ -150,7 +150,7 @@ class robot(custom_agent_brain):
                     self._fire_locations[self._current_room] = info['location']
                 if self._tactic == 'defensive' and calculate_distances(self._current_location, info['location']) <= 1:
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'IronObject' not in info['class_inheritance'] and self._current_location in self._office_doors.keys():
+            if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'iron_object' not in info['class_inheritance'] and self._current_location in self._office_doors.keys():
                 if self._task == 2 and self._current_room == 'office 01':
                     self._send_message('Iron debris fell from the roof and is now blocking the exit of office 1. I will first remove it and then continue our mission.', self._name)
                 else:
@@ -158,7 +158,7 @@ class robot(custom_agent_brain):
                 self._phase = Phase.REMOVE_OBSTACLE_IF_NEEDED
             if 'class_inheritance' in info and 'AreaTile' in info['class_inheritance'] and info['location'] not in self._room_tiles:
                 self._room_tiles.append(info['location'])
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
+            if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'source' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
                 if not self._fire_source_coords:
                     self._send_message('Found fire source in ' + self._current_room + '!', self._name)
                     self._fire_source_coords = info['location']
@@ -169,7 +169,7 @@ class robot(custom_agent_brain):
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
+            if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._phase == Phase.FOLLOW_ROOM_SEARCH_PATH:
                 if info['location'] not in self._fire_locations.values() and self._current_room not in self._fire_locations.keys():
                     self._send_message('Found fire in ' + self._current_room + '.', self._name)
                     self._fire_locations[self._current_room] = info['location']
@@ -178,7 +178,7 @@ class robot(custom_agent_brain):
                 self._smoke = info['smoke']
                 if self._tactic == 'defensive':
                     self._phase = Phase.EXTINGUISH_CHECK
-            if 'class_inheritance' in info and 'SmokeObject' in info['class_inheritance'] and 'smog' in info['obj_id']:
+            if 'class_inheritance' in info and 'smoke_object' in info['class_inheritance'] and 'smog' in info['obj_id']:
                 if info['location'] in self._office_doors.keys() and info['location'] not in self._potential_source_offices:
                     self._potential_source_offices.append(info['location'])
         # check if fire fighters already found the fire source or other fire and if yes save coordinates
@@ -220,19 +220,19 @@ class robot(custom_agent_brain):
         if self._time_left - self._resistance not in self._plot_times:
             self._plot_generated = False
         # determine the temperature based on number of extinguished fires and resistance to collapse
-        if len(self._extinguished_fire_locations) / self._no_fires != 1 and self._resistance <= 50:
+        if len(self._extinguished_fire_locations) / self._total_fires != 1 and self._resistance <= 50:
             self._temperature = '>'
             self._temperature_cat = 'higher'
-        if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance > 25 and self._resistance <= 50:
+        if len(self._extinguished_fire_locations) / self._total_fires == 1 and self._resistance > 25 and self._resistance <= 50:
             self._temperature = '>'
             self._temperature_cat = 'higher'
-        if len(self._extinguished_fire_locations) / self._no_fires != 1 and self._resistance > 50:
+        if len(self._extinguished_fire_locations) / self._total_fires != 1 and self._resistance > 50:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
-        if len(self._extinguished_fire_locations) / self._no_fires == 1 and self._resistance > 50:
+        if len(self._extinguished_fire_locations) / self._total_fires == 1 and self._resistance > 50:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
-        if len(self._extinguished_fire_locations) / self._no_fires > 0.8 and self._resistance <= 25:
+        if len(self._extinguished_fire_locations) / self._total_fires > 0.8 and self._resistance <= 25:
             self._temperature = '<≈'
             self._temperature_cat = 'close'
         # determine at which times the switch tactis situations are presented
@@ -499,7 +499,7 @@ class robot(custom_agent_brain):
                     self.received_messages = []
                     self.received_messages_content = []
                 # switch to defensive if all offices have been searched and display total number of victims as it is no longer unknown
-                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting and len(self._extinguished_fire_locations) != self._no_fires:
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and not self._waiting and len(self._extinguished_fire_locations) != self._total_fires:
                     self._total_victims = len(remaining_victims) + len(self._rescued_victims)
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victim that we found but could not rescue.', self._name)
@@ -507,14 +507,14 @@ class robot(custom_agent_brain):
                         self._send_message('Switching to a defensive deployment because we explored all offices and to make the conditions safer for the victims that we found but could not rescue.', self._name)
                     self._waiting = True
                     self._decided_time = int(self._second)
-                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) < self._decided_time + 5 and len(self._extinguished_fire_locations) != self._no_fires:
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) < self._decided_time + 5 and len(self._extinguished_fire_locations) != self._total_fires:
                     return None, {}
-                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) >= self._decided_time + 5 and len(self._extinguished_fire_locations) != self._no_fires:
+                if self._tactic == 'offensive' and self._victims == 'unknown' and len(self._searched_rooms_offensive) == 14 and self._decided_time and int(self._second) >= self._decided_time + 5 and len(self._extinguished_fire_locations) != self._total_fires:
                     self._tactic = 'defensive'
                     self._victims = 'known'
                     self._waiting = False
                 # switch to defensive if all victims have been found but not rescued and not all fires have been extinguished
-                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) != self._no_fires:
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) != self._total_fires:
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue.', self._name)
                     else:
@@ -527,7 +527,7 @@ class robot(custom_agent_brain):
                     self._waiting = False
                     self._tactic = 'defensive'
                 # switch to defensive if all victims have been found but not rescued and all fires have been extinguished
-                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) == self._no_fires:
+                if self._tactic == 'offensive' and self._victims == 'known' and len(self._found_victims) == self._total_victims and len(self._rescued_victims) != len(self._found_victims) and self._temperature == '>' and not self._evacuating and not self._waiting and len(self._extinguished_fire_locations) == self._total_fires:
                     if self._total_victims - len(self._rescued_victims) == 1:
                         self._send_message('Switching to a defensive deployment to make the conditions safer for the victim that we found but could not rescue, by inspecting if any extinguished fires have flared up again.', self._name)
                     else:
@@ -610,8 +610,8 @@ class robot(custom_agent_brain):
                 # we use 5 seconds waiting time before removing obstacles because MATRX's action duration is buggy
                 if not self._waiting:
                     for info in state.values():
-                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
-                            'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive' or \
+                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id'] and self._tactic == 'defensive' or \
+                            'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'source' in info['obj_id'] and self._tactic == 'defensive' or \
                             'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'spread fire' in info['name'] and calculate_distances(self._current_location, info['location']) <= 1:
                             self._send_message('Extinguishing fire in ' + self._current_room + '.', self._name)
                             if info['visualization']['size'] == 1.25:
@@ -947,10 +947,10 @@ class robot(custom_agent_brain):
                         self._searched_rooms_defensive = []
                         if self._door['room_name'] not in self._searched_rooms_defensive:
                             self._searched_rooms_defensive.append(self._door['room_name'])
-                        if self._temperature_cat != 'higher' or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires and self._defensive_search_rounds > 1 or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) != self._no_fires:
+                        if self._temperature_cat != 'higher' or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._total_fires and self._defensive_search_rounds > 1 or self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) != self._total_fires:
                             self._send_message('Switching to an offensive deployment because we explored all offices during the defensive deployment.', self._name)
                             self._tactic = 'offensive'
-                        if self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._no_fires and self._defensive_search_rounds < 2:
+                        if self._temperature_cat == 'higher' and len(self._extinguished_fire_locations) == self._total_fires and self._defensive_search_rounds < 2:
                             self._send_message('Going to re-explore all offices to see if any extinguished fires have flared up again.', self._name)
                     self._fire_locations = {}
                     self._phase = Phase.FIND_NEXT_GOAL
@@ -1007,13 +1007,13 @@ class robot(custom_agent_brain):
                 # determine time and object id once before waiting 5 seconds to remove obstacle because action duration of MATRX did not work properly
                 if not self._waiting:
                     for info in state.values():
-                        if 'class_inheritance' in info and 'IronObject' in info['class_inheritance'] and 'iron' in info['obj_id']:
+                        if 'class_inheritance' in info and 'iron_object' in info['class_inheritance'] and 'iron' in info['obj_id']:
                             self._send_message('Removing the iron debris blocking ' + str(self._door['room_name']) + '.', self._name)
                             self._decided_time = int(self._second)
                             self._removal_time = 5
                             self._id = info['obj_id']
                             self._waiting = True
-                        if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'IronObject' not in info['class_inheritance']:
+                        if 'class_inheritance' in info and 'EnvObject' in info['class_inheritance'] and 'iron' in info['name'] and 'iron_object' not in info['class_inheritance']:
                             self._decided_time = int(self._second)
                             self._removal_time = 15
                             self._id = info['obj_id']
@@ -1074,7 +1074,7 @@ class robot(custom_agent_brain):
                 if action != None:       
                     # keep track of which victims are found in the room            
                     for info in state.values():
-                        if 'class_inheritance' in info and 'CollectableBlock' in info['class_inheritance']:
+                        if 'class_inheritance' in info and 'victim_object' in info['class_inheritance']:
                             victim = str(info['img_name'][8:-4])
                             if victim not in self._room_victims:
                                 self._room_victims.append(victim)
@@ -1437,7 +1437,7 @@ class robot(custom_agent_brain):
                                     self.agent_properties["img_name"] = "/images/extinguish-titus.svg"
                                 self.agent_properties["visualize_size"] = 1.8
                                 for info in state.values():
-                                    if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+                                    if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id']:
                                         self._id = info['obj_id']
                                         self._fire_location = info['location']
                             # already remove fire object pinned on map while waiting
@@ -1508,7 +1508,7 @@ class robot(custom_agent_brain):
                                         self.agent_properties["img_name"] = "/images/extinguish-titus.svg"
                                     self.agent_properties["visualize_size"] = 1.8
                                     for info in state.values():
-                                        if 'class_inheritance' in info and 'FireObject' in info['class_inheritance'] and 'fire' in info['obj_id']:
+                                        if 'class_inheritance' in info and 'fire_object' in info['class_inheritance'] and 'fire' in info['obj_id']:
                                             self._id = info['obj_id']
                                             self._fire_location = info['location']
                                 # already remove fire object pinned on map while waiting

@@ -5,13 +5,13 @@ import glob
 import pathlib
 import threading
 from custom_gui import visualization_server
-from worlds1.world_builder import create_builder
+from worlds1.world_world import create_world
 from utils1.util_functions import load_R_to_Py
 from pathlib import Path
 
 if __name__ == "__main__":
     print("\nEnter the participant ID:")
-    id = os.getenv('PARTICIPANT_ID', '1')
+    participant_id = os.getenv('PARTICIPANT_ID', '1')
     print("\nEnter one of the environments 'trial' or 'experiment':")
     environment = os.getenv('ENVIRONMENT_TYPE', 'trial')
     print(environment)
@@ -19,12 +19,12 @@ if __name__ == "__main__":
         media_folder = pathlib.Path().resolve()
         print("Starting custom visualizer")
         vis_thread = visualization_server.run_matrx_visualizer(verbose = False, media_folder = media_folder)
-        builder = create_builder(id = 'na', exp_version = 'trial', name = 'Brutus', condition = 'tutorial', task = 'na', counterbalance_condition = 'na')
-        builder.startup(media_folder = media_folder)
+        world = create_world(participant_id = 'na', study_version = 'trial', name = 'Brutus', condition = 'tutorial', task = 'na', counterbalance_condition = 'na')
+        world.startup(media_folder = media_folder)
         print("Started world...")
-        world = builder.get_world()
-        builder.api_info['matrx_paused'] = False
-        world.run(builder.api_info)
+        world = world.get_world()
+        world.api_info['matrx_paused'] = False
+        world.run(world.api_info)
     else:
         print("\nEnter one of the conditions 'baseline', 'shap', or 'util':")
         condition = os.getenv('CONDITION', 'baseline')
@@ -52,17 +52,17 @@ if __name__ == "__main__":
 
             for i, robot in enumerate(robot_order, start = 0):
                 print(f"\nTask {i+1}: The robot is {robot} and task version {task_order[i]}.\n")
-                builder = create_builder(id = id, exp_version = 'experiment', name = robot, condition = condition, task = task_order[i], counterbalance_condition = counterbalance_condition)
-                builder.startup(media_folder = media_folder)
+                world = create_world(participant_id = participant_id, study_version = 'experiment', name = robot, condition = condition, task = task_order[i], counterbalance_condition = counterbalance_condition)
+                world.startup(media_folder = media_folder)
                 print("Started world...")
-                world = builder.get_world()
-                builder.api_info['matrx_paused'] = True
-                world.run(builder.api_info)
+                world = world.get_world()
+                world.api_info['matrx_paused'] = True
+                world.run(world.api_info)
 
                 if environment == "experiment":
                     fld = os.getcwd()
                     print(fld)
-                    recent_dir = max(glob.glob(os.path.join(fld, '*/counterbalance_' + counterbalance_condition + '/' + id + '/')), key = os.path.getmtime)
+                    recent_dir = max(glob.glob(os.path.join(fld, '*/counterbalance_' + counterbalance_condition + '/' + participant_id + '/')), key = os.path.getmtime)
                     recent_dir = max(glob.glob(os.path.join(recent_dir, '*/')), key = os.path.getmtime)
                     print(recent_dir)
                     action_file = glob.glob(os.path.join(recent_dir, 'world_1/action*'))[0]
@@ -96,11 +96,11 @@ if __name__ == "__main__":
                                 with open(fld + '/data/complete_data_decisions.csv', mode = 'a+') as csv_file:
                                     csv_writer = csv.writer(csv_file, delimiter = ';', quotechar='"', quoting = csv.QUOTE_MINIMAL)
                                     if row[16] == 'CRR_ND_self' or row[16] == 'FRR_MD_self' or row[16] == 'CRR_ND_robot' or row[16] == 'CRR_MD_robot':
-                                        csv_writer.writerow([id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'no intervention', row[15]])
+                                        csv_writer.writerow([participant_id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'no intervention', row[15]])
                                     if row[16] == 'FR_ND_self' or row[16] == 'CR_MD_self':
-                                        csv_writer.writerow([id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'allocate to self', row[15]])
+                                        csv_writer.writerow([participant_id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'allocate to self', row[15]])
                                     if row[16] == 'FR_MD_robot' or row[16] == 'FR_ND_robot':
-                                        csv_writer.writerow([id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'allocate to robot', row[15]])
+                                        csv_writer.writerow([participant_id, condition, counterbalance_condition, task_order[i], row[0], robot, row[16], 'allocate to robot', row[15]])
 
                             previous_row = row[6:17]
                             res = {message_header[i]: row[i] for i in range(len(message_header))}
@@ -144,7 +144,7 @@ if __name__ == "__main__":
                         
                     with open(fld + '/data/complete_data_performance.csv', mode = 'a+') as csv_file:
                         csv_writer = csv.writer(csv_file, delimiter = ';', quotechar='"', quoting = csv.QUOTE_MINIMAL)
-                        csv_writer.writerow([id, condition, counterbalance_condition, task_order[i], row[0], robot, completeness, no_ticks, len(unique_robot_moves), no_messages_robot, no_messages_human, 
+                        csv_writer.writerow([participant_id, condition, counterbalance_condition, task_order[i], row[0], robot, completeness, no_ticks, len(unique_robot_moves), no_messages_robot, no_messages_human, 
                                              total_allocations, human_allocations, robot_allocations, total_interventions, disagreement_rate, correct_behavior_rate, incorrect_behavior_rate, correct_intervention_rate, 
                                              incorrect_intervention_rate, firefighter_decisions, firefighter_danger, firefighter_danger_rate, CRR_ND_self, FR_ND_self, FRR_MD_self, CR_MD_self, CRR_MD_robot, FR_MD_robot, CRR_ND_robot, FR_ND_robot])
 
@@ -155,4 +155,4 @@ if __name__ == "__main__":
     print("Shutting down custom visualizer")
     r = requests.get("http://localhost:" + str(visualization_server.port) + "/shutdown_visualizer")
     vis_thread.join()
-    builder.stop()
+    world.stop()
