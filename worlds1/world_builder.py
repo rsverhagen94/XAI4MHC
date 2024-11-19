@@ -119,7 +119,7 @@ def create_world(participant_id, study_version, name, condition, task, counterba
         builder = WorldBuilder(shape = [26, 25], tick_duration = 0.5, run_matrx_api = True, run_matrx_visualizer = False, verbose = False, simulation_goal = goal, visualization_bg_clr = '#e5ddd5')
         # determine directories for logging
         current_experiment_dir = datetime.now().strftime(condition + "_" + name + "_T" + str(task) + "_%d-%m_%Hh-%Mm-%Ss")
-        logger_save_dir = os.path.join("experiment_logs/counterbalance_" + counterbalance_condition + "/" + str(id), current_experiment_dir)
+        logger_save_dir = os.path.join("experiment_logs/counterbalance_" + counterbalance_condition + "/" + str(participant_id), current_experiment_dir)
         # add loggers to the world
         builder.add_logger(action_logger, log_strategy = 1, save_path = logger_save_dir, file_name_prefix = "actions_")
         builder.add_logger(message_logger, save_path = logger_save_dir, file_name_prefix = "messages_")
