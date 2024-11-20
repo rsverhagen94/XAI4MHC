@@ -18,10 +18,10 @@ sudo docker run -p 3000:3000 -p 3001:3001 -e PARTICIPANT_ID="1" -e ENVIRONMENT_T
 sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)/data:/usr/src/app/data -p 3000:3000 -p 3001:3001 -e PARTICIPANT_ID="1" -e ENVIRONMENT_TYPE="experiment" -e CONDITION="shap" -e COUNTERBALANCE_CONDITION="1" -e IS_DOCKER="true" --rm xai4mhc
 ```
 5. Several arguments are used when running the Docker images above:
-```
--v $(pwd)/experiment_logs:/usr/src/app/experiment_logs # stores experiment logs locally
-```
-```
+    - `
+    -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs # stores experiment logs locally
+    `
+    `
 -v $(pwd)/data:/usr/src/app/data # stores output data locally
 ```
 ```
