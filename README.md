@@ -24,43 +24,34 @@ sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)
     - `
     -v $(pwd)/data:/usr/src/app/data # stores output data locally
     `
-
     - `
     -p 3000:3000 # maps port 3000 of the container to port 3000 on the host
     `
-
     - `
     -p 3001:3001 # maps port 3001 of the container to port 3001 on the host
     `
-
     - `
     -e PARTICIPANT_ID = "1" # determines the enviroment variable PARTICIPANT_ID. You can replace this number with the ID of your choice
     `
-
     - `
     -e ENVIRONMENT_TYPE = "experiment" # determines the environment variable ENVIRONMENT_TYPE. You can choose either "trial" or "experiment" for this variable
     `
-
     - `
     -e CONDITION = "shap" # determines the environment variable CONDITION. You can choose one of the explanation conditions "baseline", "shap", or "util"
     `
-
     - `
-    -e COUNTERBALANCE_CONDITION = "1" # determine the environment variable COUNTERBALANCE_CONDITION. You can choose one of the conditions "1", "2", "3", "4", "5", "6", "7", or "8"
+    -e COUNTERBALANCE_CONDITION = "1" # determine the environment variable COUNTERBALANCE_CONDITION. You can choose one of the conditions "1", "2", "3", "4", "5", "6", "7", or "8". These conditions determine the order of tasks and robot collaboration
     `
-
     - `
     -e IS_DOCKER = "true" # determine the environment variable IS_DOCKER. Keep this environment variable, as it is used to distinguish between running the repository locally or using Docker
     `
-
     - `
     --rm # automatically removes the container when it exits
     `
-
     - `
     xai4mhc # specify the Docker image to use
     `
-6. Visit the web GUI at: localhost:3000. In the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition) if you want to play the task as a participant. With the God view you can observe everything in the environment, this mode is recommended when acting as the experimenter.
+6. The following steps and images are related to running the Docker image to start the official experiment, although the differences are minimal compared to running the Docker image to start the trial environment. After running the Docker image, visit the web GUI at localhost:3000. In the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition) if you want to play the task as a participant. With the God view you can observe everything in the environment, this mode is recommended when acting as the experimenter. If you launched the trial environment, you can only select brutus in the dropdown menu.
 
 ![localhost-startpage](images/localhost_startpage.png "Localhost Startpage") 
 
@@ -80,7 +71,7 @@ sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)
 ```
 OSError: [Errno 98] Address already in use
 ```
-11. The second task will again automatically pause with 100 and 50 minutes remaining. After finishing the second task, the complete experiment logs can be found locally in the experiment_logs directory and the aggregated data in the data directory.
+11. The second task will again automatically pause with 100 and 50 minutes remaining. After finishing the second task, the complete experiment logs can be found locally in the experiment_logs directory and the aggregated data in the data directory. No logs or data will be saved when running the trial environment.
 
 ## Task
 The objective of the task is to find target victims in the different areas and carry them to the drop zone. Rescuing mildly injured victims (yellow color) add three points to the total score, rescuing critically injured victims (red color) adds six points to the total score. Critically injured victims can only be carried by both human and agent together. Areas can be blocked by three different obstacle types. One of these can only be removed together, one only by the agent, and one both alone and together (but together is much faster). The world terminates after successfully rescuing all target victims, or after 8 minutes. Save the output logs by pressing the stop icon in the 'God' view, which can then be found in the 'experiment_logs' folder. The image below shows the 'God' view and the messaging interface. 
