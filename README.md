@@ -40,7 +40,7 @@ sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store
 ![view-disconnected](images/view_disconnected.png "View Disconnected")
 
 - You can now go back to localhost:3000 and in the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition). You can now complete the second task. After the first task finished, you will see an OS error that can be ignored and will be overwritten when starting the second task:
-```bash
+```
 OSError: [Errno 98] Address already in use
 ```
 - The second task will again automatically pause with 100 and 50 minutes remaining. After finishing the second task, the complete experiment logs can be found locally in the experiment_logs directory and the aggregated data in the data directory.
