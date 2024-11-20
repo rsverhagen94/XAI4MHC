@@ -2,11 +2,19 @@
 ## Installation
 - Install the Docker version for your OS: https://docs.docker.com/engine/install/
 - Start the Docker service: 
-
 ``` bash
 sudo service docker start
 ```
+- Install the Docker image:
+``` bash
+sudo docker build -t xai4mhc .
+```
+- Run the Docker image:
+``` bash
+sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store experiment logs locally
+                -v $
 
+```
 
 - Install the required dependencies through 'pip install -r requirements.txt'. 
 - Launch the human-agent teamwork task by running main.py.
@@ -20,4 +28,4 @@ The objective of the task is to find target victims in the different areas and c
 
 ![environment-chat-1](https://user-images.githubusercontent.com/54837051/204800699-89ed7159-d329-4f95-8441-acb601ff90a5.png)
 
-docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)/data:/usr/src/app/data --rm -e PARTICIPANT_ID="999" -e ENVIRONMENT_TYPE="experiment" -e CONDITION="util" -e COUNTERBALANCE_CONDITION="1" -e IS_DOCKER="true" -p 3000:3000 -p 3001:3001 --user $(id -u):$(id -g) my-python-r-conda-app
+docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)/data:/usr/src/app/data --rm -e PARTICIPANT_ID="999" -e ENVIRONMENT_TYPE="experiment" -e CONDITION="util" -e COUNTERBALANCE_CONDITION="1" -e IS_DOCKER="true" -p 3000:3000 -p 3001:3001 my-python-r-conda-app
