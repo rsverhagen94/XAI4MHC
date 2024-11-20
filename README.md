@@ -17,40 +17,39 @@ sudo docker run -p 3000:3000 -p 3001:3001 -e PARTICIPANT_ID="1" -e ENVIRONMENT_T
 ```bash
 sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)/data:/usr/src/app/data -p 3000:3000 -p 3001:3001 -e PARTICIPANT_ID="1" -e ENVIRONMENT_TYPE="experiment" -e CONDITION="shap" -e COUNTERBALANCE_CONDITION="1" -e IS_DOCKER="true" --rm xai4mhc
 ```
-5. Several arguments are used when running the Docker images above:
     - `
     -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs # stores experiment logs locally
     `
+    - `
+    -v $(pwd)/data:/usr/src/app/data # stores output data locally
     `
--v $(pwd)/data:/usr/src/app/data # stores output data locally
-```
-```
--p 3000:3000 # maps port 3000 of the container to port 3000 on the host
-```
-```
--p 3001:3001 # maps port 3001 of the container to port 3001 on the host
-```
-```
--e PARTICIPANT_ID = "1" # determines the enviroment variable PARTICIPANT_ID. You can replace this number with the ID of your choice
-```
-```
--e ENVIRONMENT_TYPE = "experiment" # determines the environment variable ENVIRONMENT_TYPE. You can choose either "trial" or "experiment" for this variable
-```
-```
--e CONDITION = "shap" # determines the environment variable CONDITION. You can choose one of the explanation conditions "baseline", "shap", or "util"
-```
-```
--e COUNTERBALANCE_CONDITION = "1" # determine the environment variable COUNTERBALANCE_CONDITION. You can choose one of the conditions "1", "2", "3", "4", "5", "6", "7", or "8"
-```
-```
--e IS_DOCKER = "true" # determine the environment variable IS_DOCKER. Keep this environment variable, as it is used to distinguish between running the repository locally or using Docker
-```
-```
---rm # automatically removes the container when it exits
-```
-```
-xai4mhc # specify the Docker image to use
-```
+    - `
+    -p 3000:3000 # maps port 3000 of the container to port 3000 on the host
+    `
+    - `
+    -p 3001:3001 # maps port 3001 of the container to port 3001 on the host
+    `
+    - `
+    -e PARTICIPANT_ID = "1" # determines the enviroment variable PARTICIPANT_ID. You can replace this number with the ID of your choice
+    `
+    - `
+    -e ENVIRONMENT_TYPE = "experiment" # determines the environment variable ENVIRONMENT_TYPE. You can choose either "trial" or "experiment" for this variable
+    `
+    - `
+    -e CONDITION = "shap" # determines the environment variable CONDITION. You can choose one of the explanation conditions "baseline", "shap", or "util"
+    `
+    - `
+    -e COUNTERBALANCE_CONDITION = "1" # determine the environment variable COUNTERBALANCE_CONDITION. You can choose one of the conditions "1", "2", "3", "4", "5", "6", "7", or "8"
+    `
+    - `
+    -e IS_DOCKER = "true" # determine the environment variable IS_DOCKER. Keep this environment variable, as it is used to distinguish between running the repository locally or using Docker
+    `
+    - `
+    --rm # automatically removes the container when it exits
+    `
+    - `
+    xai4mhc # specify the Docker image to use
+    `
 6. Visit the web GUI at: localhost:3000. In the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition) if you want to play the task as a participant. With the God view you can observe everything in the environment, this mode is recommended when acting as the experimenter.
 
 ![localhost-startpage](images/localhost_startpage.png "Localhost Startpage") 
