@@ -24,6 +24,7 @@ sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store
                 xai4mhc # specify the Docker image to use
 ```
 - Visit the web GUI at: localhost:3000. In the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition):
+
 ![localhost-startpage](images/localhost_startpage.png "Localhost Startpage") 
 
 - Install the required dependencies through 'pip install -r requirements.txt'. 
