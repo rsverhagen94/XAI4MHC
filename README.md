@@ -2,15 +2,25 @@
 ## Installation
 - Install the Docker version for your OS: https://docs.docker.com/engine/install/
 - Start the Docker service: 
-``` bash
+```bash
 sudo service docker start
 ```
 - Install the Docker image:
-``` bash
+```bash
 sudo docker build -t xai4mhc .
 ```
-- Run the Docker image:
-``` bash
+- Run the Docker image to start the tutorial:
+```bash
+sudo docker run -p 3000:3000 \ # map port 3000 of the container to port 3000 on the host
+                -p 3001:3001 \ # map port 3000 of the container to port 3000 on the host
+                -e PARTICIPANT_ID = "1" \ # replace with the participant ID of your choice
+                -e ENVIRONMENT_TYPE = "trial" \ # replace with your environment of choice: trial or experiment
+                -e IS_DOCKER = "true" \ # keep this environment variable as it is used to distinguish between running the repository locally or using Docker
+                --rm \ # automatically remove the container when it exits
+                xai4mhc # specify the Docker image to use
+```
+- Run the Docker image to start the official experiment:
+```bash
 sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store experiment logs locally
                 -v $(pwd)/data:/usr/src/app/data \ # store data locally
                 -p 3000:3000 \ # map port 3000 of the container to port 3000 on the host
