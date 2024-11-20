@@ -12,9 +12,19 @@ sudo docker build -t xai4mhc .
 - Run the Docker image:
 ``` bash
 sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store experiment logs locally
-                -v $
-
+                -v $(pwd)/data:/usr/src/app/data \ # store data locally
+                -p 3000:3000 \ # map port 3000 of the container to port 3000 on the host
+                -p 3001:3001 \ # map port 3000 of the container to port 3000 on the host
+                -e PARTICIPANT_ID = "1" \ # replace with the participant ID of your choice
+                -e ENVIRONMENT_TYPE = "trial" \ # replace with your environment of choice: trial or experiment
+                -e CONDITION = "shap" \ # replace with your explanation condition of choice: baseline, shap, or util
+                -e COUNTERBALANCE_CONDITION = "1" \ # replace with your counterbalance condition of choice: 1, 2, 3, 4, 5, 6, 7, or 8
+                -e IS_DOCKER = "true" \ # keep this environment variable as it is used to distinguish between running the repository locally or using Docker
+                --rm \ # automatically remove the container when it exits
+                xai4mhc # specify the Docker image to use
 ```
+- Visit the web GUI at: localhost:3000. In the dropdown menu to choose an agent to view, select brutus or titus (depending on your counterbalance condition):
+![localhost-startpage](images/localhost_startpage.png "Localhost Startpage") 
 
 - Install the required dependencies through 'pip install -r requirements.txt'. 
 - Launch the human-agent teamwork task by running main.py.
@@ -25,7 +35,3 @@ sudo docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs \ # store
 
 ## Task
 The objective of the task is to find target victims in the different areas and carry them to the drop zone. Rescuing mildly injured victims (yellow color) add three points to the total score, rescuing critically injured victims (red color) adds six points to the total score. Critically injured victims can only be carried by both human and agent together. Areas can be blocked by three different obstacle types. One of these can only be removed together, one only by the agent, and one both alone and together (but together is much faster). The world terminates after successfully rescuing all target victims, or after 8 minutes. Save the output logs by pressing the stop icon in the 'God' view, which can then be found in the 'experiment_logs' folder. The image below shows the 'God' view and the messaging interface. 
-
-![environment-chat-1](https://user-images.githubusercontent.com/54837051/204800699-89ed7159-d329-4f95-8441-acb601ff90a5.png)
-
-docker run -v $(pwd)/experiment_logs:/usr/src/app/experiment_logs -v $(pwd)/data:/usr/src/app/data --rm -e PARTICIPANT_ID="999" -e ENVIRONMENT_TYPE="experiment" -e CONDITION="util" -e COUNTERBALANCE_CONDITION="1" -e IS_DOCKER="true" -p 3000:3000 -p 3001:3001 my-python-r-conda-app
