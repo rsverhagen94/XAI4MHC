@@ -13,9 +13,9 @@ sudo docker build -t xai4mhc .
 ```bash
 sudo docker run -p 3000:3000 \ # map port 3000 of the container to port 3000 on the host
                 -p 3001:3001 \ # map port 3000 of the container to port 3000 on the host
-                -e PARTICIPANT_ID = "1" \ # replace with the participant ID of your choice
-                -e ENVIRONMENT_TYPE = "trial" \ # replace with your environment of choice: trial or experiment
-                -e IS_DOCKER = "true" \ # keep this environment variable as it is used to distinguish between running the repository locally or using Docker
+                -e PARTICIPANT_ID="1" \ # replace with the participant ID of your choice
+                -e ENVIRONMENT_TYPE="trial" \ # replace with your environment of choice: trial or experiment
+                -e IS_DOCKER="true" \ # keep this environment variable as it is used to distinguish between running the repository locally or using Docker
                 --rm \ # automatically remove the container when it exits
                 xai4mhc # specify the Docker image to use
 ```
