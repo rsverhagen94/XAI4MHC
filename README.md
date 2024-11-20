@@ -5,6 +5,7 @@
 
 ``` bash
 sudo service docker start
+```
 
 
 - Install the required dependencies through 'pip install -r requirements.txt'. 
