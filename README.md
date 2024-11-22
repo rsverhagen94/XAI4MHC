@@ -5,7 +5,7 @@
 ```bash
 sudo service docker start
 ```
-3. Install the Docker image:
+3. Install the Docker image (this might take some time):
 ```bash
 sudo docker build -t xai4mhc .
 ```
